@@ -1,6 +1,6 @@
 MODULE test; (* noch 13.4.2017 / 18.5.2017*)
 
-IMPORT IRC, Out, Strings := ooc2Strings, Platform, StringList;
+IMPORT IRC, Out, Strings := ooc2Strings, Platform, StringList, oocIntStr, strutils;
 
 CONST
   strListLen = 5;
@@ -11,6 +11,7 @@ VAR
   b: BOOLEAN;
   stringList: StringList.TStringList; (* buffer to store lines *)
 
+(* for debug *)
 PROCEDURE list(VAR s : StringList.TStringList);
 VAR e : StringList.Node;
        i : INTEGER;
@@ -28,6 +29,31 @@ BEGIN
    UNTIL i = s.Count;
 END list;
 
+(* sends list of messages to the requestor *)
+PROCEDURE listToUser(VAR s : StringList.TStringList; user: ARRAY OF CHAR; num: LONGINT);
+VAR e : StringList.Node;
+       i : INTEGER;
+    L : StringList.TList;
+    k : LONGINT;
+BEGIN
+   NEW(e);
+   i := 0;
+   NEW(L);
+   L := s;
+   k := strListLen - num;
+   REPEAT
+      e := s.Get(L, i);
+      IF e # NIL THEN 
+        IF i >= k THEN
+          Out.String (e.obj(StringList.TString).str); Out.Ln;
+          IRC.sendMsgToDst(inst, user, e.obj(StringList.TString).str);
+        END;
+      END;
+      INC(i);
+   UNTIL (i = s.Count);
+END listToUser;
+
+
 (*
 PROCEDURE onMessage(VAR msg : ARRAY OF CHAR);
 BEGIN
@@ -37,6 +63,53 @@ BEGIN
    Out.Ln;
 END onMessage;
 *)
+
+PROCEDURE processPrivateMessage(VAR msg, user: ARRAY OF CHAR);
+VAR
+  tmp, num: ARRAY 16 OF CHAR;
+  tlk: ARRAY 128 OF CHAR;
+  i: INTEGER;
+  j: LONGINT;
+  res: SHORTINT;
+  pstr: strutils.pstring;
+BEGIN
+  Strings.Extract(msg, 0, 4, tmp);
+  IF (tmp = "help") THEN 
+     tlk := "Type 'last n' to get last n messages I remember. I do remember only last ";
+     oocIntStr.IntToStr(strListLen, num); 
+     Strings.Append(num, tlk);
+     Strings.Append(" messages.", tlk);
+     IRC.sendMsgToDst(inst, user, tlk);
+  ELSIF (tmp = "last") THEN
+     i := strutils.WordCount(msg, ' ');
+     IF i = 2 THEN
+       pstr := strutils.ExtractWord(2, msg, ' ');
+       oocIntStr.StrToInt(pstr^, j, res);
+       IF res = 0 THEN
+         IF j <= strListLen THEN
+           listToUser(stringList, user, j);
+         ELSE
+           tlk := "I do remember only last ";
+           oocIntStr.IntToStr(strListLen, num); 
+           Strings.Append(num, tlk);
+           Strings.Append(" messages.", tlk);
+           IRC.sendMsgToDst(inst, user, tlk);
+           listToUser(stringList, user, strListLen);
+         END;
+       ELSE
+         tlk := "number expected, but got '";
+         Strings.Append(pstr^, tlk);
+         Strings.Append("', please try again.", tlk);
+         IRC.sendMsgToDst(inst, user, tlk);
+       END;
+     ELSE
+       IRC.sendMsgToDst(inst, user, "wrong format of 'last' command.");
+     END;
+  ELSE
+     IRC.sendMsgToDst(inst, user, "I am not a sofisticated bot.  Type 'help' for help.");
+  END;
+END processPrivateMessage;
+
 PROCEDURE onPrivateMessage(VAR msg, msgtype, user, ident, host: ARRAY OF CHAR);
 BEGIN
   Out.String("*** private message ***"); Out.Ln;
@@ -47,6 +120,7 @@ BEGIN
   Out.String("host: '"); Out.String(host); Out.Char("'"); Out.Ln;
   Out.String("*** that's it ***"); Out.Ln;
   (*IRC.sendMsgToDst(inst, user, "hello, nice to meet you");*)
+  processPrivateMessage(msg, user);
 END onPrivateMessage;
 
 PROCEDURE onPublicMessage(VAR msg, msgtype, user, ident, rcpt, host: ARRAY OF CHAR);
