@@ -1,13 +1,32 @@
 MODULE test; (* noch 13.4.2017 / 18.5.2017*)
 
-IMPORT IRC, Out, Strings := ooc2Strings, Platform;
+IMPORT IRC, Out, Strings := ooc2Strings, Platform, StringList;
 
+CONST
+  strListLen = 5;
 (* i am moving these to global section to make possible for interrupt handler to access instance *)
 VAR 
   inst: IRC.instance;
   channels : IRC.Channels;
   b: BOOLEAN;
+  stringList: StringList.TStringList; (* buffer to store lines *)
 
+PROCEDURE list(VAR s : StringList.TStringList);
+VAR e : StringList.Node;
+       i : INTEGER;
+    L : StringList.TList;
+BEGIN
+   NEW(e);
+   i := 0;
+   NEW(L);
+   L := s;
+   REPEAT
+      e := s.Get(L, i);
+      IF e # NIL THEN Out.String (e.obj(StringList.TString).str); Out.Ln END;
+      (*Out.String (e.string); Out.Ln;*)
+      INC(i);
+   UNTIL i = s.Count;
+END list;
 
 (*
 PROCEDURE onMessage(VAR msg : ARRAY OF CHAR);
@@ -27,10 +46,12 @@ BEGIN
   Out.String("ident: '"); Out.String(ident); Out.Char("'"); Out.Ln;
   Out.String("host: '"); Out.String(host); Out.Char("'"); Out.Ln;
   Out.String("*** that's it ***"); Out.Ln;
-  IRC.sendMsgToDst(inst, user, "hello, nice to meet you");
+  (*IRC.sendMsgToDst(inst, user, "hello, nice to meet you");*)
 END onPrivateMessage;
 
 PROCEDURE onPublicMessage(VAR msg, msgtype, user, ident, rcpt, host: ARRAY OF CHAR);
+VAR
+  tmpstr: StringList.TString;
 BEGIN
   Out.String("*** public message ***"); Out.Ln;
   Out.String("message: '"); Out.String(msg); Out.Char("'"); Out.Ln;
@@ -40,7 +61,21 @@ BEGIN
   Out.String("recipient: '"); Out.String(rcpt); Out.Char("'"); Out.Ln;
   Out.String("host: '"); Out.String(host); Out.Char("'"); Out.Ln;
   Out.String("*** that's it ***"); Out.Ln;
-  IF msgtype # IRC.msgJOIN THEN IRC.sendMsgToDst(inst, rcpt, "test back") END;
+  (*IF msgtype # IRC.msgJOIN THEN IRC.sendMsgToDst(inst, rcpt, "test back") END;*)
+  IF msgtype = IRC.msgPRIVMSG THEN
+     NEW(tmpstr);
+     tmpstr.str := user;
+     Strings.Append(": ", tmpstr.str);
+     Strings.Append(msg, tmpstr.str);
+     IF stringList.Count < strListLen THEN
+       stringList.Append(stringList, tmpstr)
+     ELSE
+       stringList.Delete(stringList, 0);
+       stringList.Append(stringList, tmpstr)
+     END;
+     Out.String("now list looks like:"); Out.Ln;
+     list(stringList);
+  END;
 END onPublicMessage;
 
 PROCEDURE onPublicMessageWithMention(VAR msg, msgtype, user, ident, rcpt, host: ARRAY OF CHAR);
@@ -74,13 +109,15 @@ BEGIN
 
 
 
-  NEW(channels, 2);
+  NEW(channels, 1); (* in this particular case we only login to one channel *)
   channels[0].channel := "#oberon-test";
-  channels[1].channel := "#pascal-test";
   IRC.setLogging(inst, TRUE);
   IRC.initChannelList(inst, channels);
 
   Platform.SetInterruptHandler(interrupt);
+  
+  (* vocbot specific functionality, buffer to store last n messages *)
+  stringList := StringList.Create();
 
   IF IRC.Connect(inst) # FALSE THEN
     b := IRC.Auth(inst);
