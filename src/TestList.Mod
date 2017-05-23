@@ -57,7 +57,7 @@ BEGIN
    list(strs);
    Out.Ln; 
    l := strs.IndexOf(strs, "000");
-   Out.String ("index "); Out.LongInt (l,0); Out.Ln;
+   Out.String ("index "); Out.Int (l,0); Out.Ln;
 
    strs.Delete(L0,6);
 
