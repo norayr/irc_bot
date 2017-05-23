@@ -40,7 +40,7 @@ BEGIN
    i := 0;
    NEW(L);
    L := s;
-   k := strListLen - num;
+   k := s.Count - num;
    REPEAT
       e := s.Get(L, i);
       IF e # NIL THEN 
@@ -87,7 +87,14 @@ BEGIN
        oocIntStr.StrToInt(pstr^, j, res);
        IF res = 0 THEN
          IF j <= strListLen THEN
-           listToUser(stringList, user, j);
+           IF (j > stringList.Count) & (stringList.Count < strListLen) THEN
+             tlk:= "as i was started recently i only remember ";
+             oocIntStr.IntToStr(stringList.Count, num);
+             Strings.Append(num, tlk);
+             Strings.Append(" lines.", tlk);
+             IRC.sendMsgToDst(inst, user, tlk);
+           END;
+             listToUser(stringList, user, j);
          ELSE
            tlk := "I do remember only last ";
            oocIntStr.IntToStr(strListLen, num); 
