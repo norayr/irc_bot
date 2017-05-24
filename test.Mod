@@ -196,6 +196,8 @@ BEGIN
      NEW(tmpstr);
       tmpstr.str := user;
       Strings.Append(": ", tmpstr.str);
+      Strings.Append(inst.nick, tmpstr.str);
+      Strings.Append(": ", tmpstr.str);
       Strings.Append(msg, tmpstr.str);
      IF stringList.Count < strListLen THEN
        stringList.Append(stringList, tmpstr)
