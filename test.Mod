@@ -1,6 +1,6 @@
 MODULE test; (* noch 13.4.2017 / 18.5.2017*)
 
-IMPORT IRC, Out, Strings := ooc2Strings, Platform, StringList, oocIntStr, strutils;
+IMPORT IRC, Out, Strings := ooc2Strings, Platform, StringList, oocIntStr, strutils, sh:= stringHelpers;
 
 CONST
   strListLen = 100;
@@ -134,6 +134,10 @@ END onPrivateMessage;
 PROCEDURE onPublicMessage(VAR msg, msgtype, user, ident, rcpt, host: ARRAY OF CHAR);
 VAR
   tmpstr: StringList.TString;
+  (* for handling ACTION messages *)
+  b0: BOOLEAN;
+  j: INTEGER;
+  str0: ARRAY IRC.msgLen OF CHAR;
 BEGIN
   Out.String("*** public message ***"); Out.Ln;
   Out.String("message: '"); Out.String(msg); Out.Char("'"); Out.Ln;
@@ -146,9 +150,19 @@ BEGIN
   (*IF msgtype # IRC.msgJOIN THEN IRC.sendMsgToDst(inst, rcpt, "test back") END;*)
   IF msgtype = IRC.msgPRIVMSG THEN
      NEW(tmpstr);
-     tmpstr.str := user;
-     Strings.Append(": ", tmpstr.str);
-     Strings.Append(msg, tmpstr.str);
+     tmpstr.str := "";
+     Strings.FindNext(IRC.msgACTION, msg, 1, b0, j);
+     IF b0 THEN (* handle actions *)
+        Strings.Append("***", tmpstr.str);
+        Strings.Append(user, tmpstr.str);
+        Strings.Append(" ", tmpstr.str);
+        sh.getTillEOL(msg, j+Strings.Length(IRC.msgACTION), str0);
+        Strings.Append(str0, tmpstr.str);
+     ELSE
+        tmpstr.str := user;
+        Strings.Append(": ", tmpstr.str);
+        Strings.Append(msg, tmpstr.str);
+     END;
      IF stringList.Count < strListLen THEN
        stringList.Append(stringList, tmpstr)
      ELSE
