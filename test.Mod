@@ -151,6 +151,7 @@ BEGIN
   IF msgtype = IRC.msgPRIVMSG THEN
      NEW(tmpstr);
      tmpstr.str := "";
+     b0 := FALSE;
      Strings.FindNext(IRC.msgACTION, msg, 1, b0, j);
      IF b0 THEN (* handle actions *)
         Strings.Append("***", tmpstr.str);
@@ -207,7 +208,7 @@ BEGIN
 
 
   NEW(channels, 1); (* in this particular case we only login to one channel *)
-  channels[0].channel := "#oberon";
+  channels[0].channel := "#oberon-test";
   IRC.setLogging(inst, TRUE);
   IRC.initChannelList(inst, channels);
 
