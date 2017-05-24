@@ -114,7 +114,7 @@ BEGIN
        IRC.sendMsgToDst(inst, user, "wrong format of 'last' command.");
      END;
   ELSE
-     IRC.sendMsgToDst(inst, user, "I am not a sofisticated bot.  Type 'help' for help.");
+     IRC.sendMsgToDst(inst, user, "I am not a sophisticated bot.  Type 'help' for help.");
   END;
 END processPrivateMessage;
 
@@ -231,7 +231,7 @@ BEGIN
 
 
   NEW(channels, 1); (* in this particular case we only login to one channel *)
-  channels[0].channel := "#oberon-test";
+  channels[0].channel := "#oberon";
   IRC.setLogging(inst, TRUE);
   IRC.initChannelList(inst, channels);
 
