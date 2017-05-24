@@ -176,6 +176,9 @@ BEGIN
 END onPublicMessage;
 
 PROCEDURE onPublicMessageWithMention(VAR msg, msgtype, user, ident, rcpt, host: ARRAY OF CHAR);
+VAR
+  tmp: ARRAY IRC.msgLen OF CHAR;
+  tmpstr: StringList.TString;
 BEGIN
   Out.String("*** public message, bot name mentioned ***"); Out.Ln;
   Out.String("message: '"); Out.String(msg); Out.Char("'"); Out.Ln;
@@ -185,6 +188,24 @@ BEGIN
   Out.String("recipient: '"); Out.String(rcpt); Out.Char("'"); Out.Ln;
   Out.String("host: '"); Out.String(host); Out.Char("'"); Out.Ln;
   Out.String("*** that's it ***"); Out.Ln;
+  tmp := user;
+  Strings.Append(": let's talk in private in order to not flood the channel. type 'help' for help.", tmp);
+  IRC.sendMsgToDst(inst, user, tmp);
+  (* log this *)
+  IF msgtype = IRC.msgPRIVMSG THEN
+     NEW(tmpstr);
+      tmpstr.str := user;
+      Strings.Append(": ", tmpstr.str);
+      Strings.Append(msg, tmpstr.str);
+     IF stringList.Count < strListLen THEN
+       stringList.Append(stringList, tmpstr)
+     ELSE
+       stringList.Delete(stringList, 0);
+       stringList.Append(stringList, tmpstr)
+     END;
+     Out.String("now list looks like:"); Out.Ln;
+     list(stringList)
+  END
 END onPublicMessageWithMention;
 
 PROCEDURE interrupt(i: LONGINT);
