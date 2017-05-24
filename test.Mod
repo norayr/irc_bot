@@ -3,7 +3,7 @@ MODULE test; (* noch 13.4.2017 / 18.5.2017*)
 IMPORT IRC, Out, Strings := ooc2Strings, Platform, StringList, oocIntStr, strutils;
 
 CONST
-  strListLen = 5;
+  strListLen = 100;
 (* i am moving these to global section to make possible for interrupt handler to access instance *)
 VAR 
   inst: IRC.instance;
@@ -45,6 +45,7 @@ BEGIN
       e := s.Get(L, i);
       IF e # NIL THEN 
         IF i >= k THEN
+          Platform.Delay(1000); (* to prevent being killed for flood *)
           Out.String (e.obj(StringList.TString).str); Out.Ln;
           IRC.sendMsgToDst(inst, user, e.obj(StringList.TString).str);
         END;
@@ -191,7 +192,7 @@ BEGIN
 
 
   NEW(channels, 1); (* in this particular case we only login to one channel *)
-  channels[0].channel := "#oberon-test";
+  channels[0].channel := "#oberon";
   IRC.setLogging(inst, TRUE);
   IRC.initChannelList(inst, channels);
 
