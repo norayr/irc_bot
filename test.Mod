@@ -232,9 +232,13 @@ BEGIN
   i := 0;
   REPEAT
     Files.Read(r, b);
-    IF b >= 32 THEN
-      s[i] := CHR(b)
-    END;
+    (*IF b >= 32 THEN*)
+      IF b = 10 THEN
+        s[i] := 0AX
+      ELSE
+        s[i] := CHR(b)
+      END
+    (*END;*)
       INC(i)
   UNTIL (b = 10(*0AX*)) OR r.eof;
 END readLine;
@@ -261,6 +265,7 @@ BEGIN
         IF b THEN
           NEW(tmpstr);
           Strings.Extract(s, pos+2, Strings.Length(s) - pos+2, tmpstr.str);
+          tmpstr.str[Strings
           IF stringList.Count < strListLen THEN
             stringList.Append(stringList, tmpstr)
           ELSE
