@@ -237,7 +237,7 @@ BEGIN
         s[i] := 0AX
       ELSE
         s[i] := CHR(b)
-      END
+      END;
     (*END;*)
       INC(i)
   UNTIL (b = 10(*0AX*)) OR r.eof;
@@ -265,7 +265,6 @@ BEGIN
         IF b THEN
           NEW(tmpstr);
           Strings.Extract(s, pos+2, Strings.Length(s) - pos+2, tmpstr.str);
-          tmpstr.str[Strings
           IF stringList.Count < strListLen THEN
             stringList.Append(stringList, tmpstr)
           ELSE
