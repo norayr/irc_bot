@@ -10,10 +10,10 @@ TYPE
      Int32* = LONGINT;
      Int64* = HUGEINT;
      String* = ARRAY 256 OF CHAR;
-     
+
    PROCEDURE HugeintToInt16*(in: HUGEINT; VAR out: Int16);
    VAR
-    int64 : intarr64; 
+    int64 : intarr64;
     int16 : intarr16;
    BEGIN
     int64 := SYS.VAL(intarr64, in);

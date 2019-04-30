@@ -63,10 +63,10 @@ TYPE
    addrInfo* = RECORD
      aiFlags*: Int32;
      aiFamily*:Int32;
-	 aiSockType*: Int32;
-	 aiProtocol*: Int32;
-	 aiAddrLen*:  Int32;
-	 aiAddr*, aiCanonName*, aiNext*: SYSTEM.ADDRESS; (* pointers *)
+     aiSockType*: Int32;
+     aiProtocol*: Int32;
+     aiAddrLen*:  Int32;
+     aiAddr*, aiCanonName*, aiNext*: SYSTEM.ADDRESS; (* pointers *)
    END;
 
 

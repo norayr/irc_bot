@@ -1,38 +1,38 @@
 MODULE IRC; (*noch 23.2.2017 / 19.5.2017*)
 IMPORT Internet, Out, Files, Strings := ooc2Strings, sh := stringHelpers, types, time;
 
-CONST 
+CONST
   msgLen* = 512; (* message length not more than 512 characters *)
   (* irc commands *)
-  cmdPing*			=	"PING";
-  cmdPong*			=	"PONG";
-  cmdMode*			=	"MODE";
-  cmdJoin*			= "JOIN";
-  cmdUser*			= "USER";
-  cmdNick*			= "NICK";
-  msgPRIVMSG*		=	"PRIVMSG";
-  msgNOTICE*  	= "NOTICE";
-  msgQUIT*    	= "QUIT";
-  msgJOIN*    	= "JOIN";
-  msgPART*    	= "PART";
+  cmdPing*      = "PING";
+  cmdPong*      = "PONG";
+  cmdMode*      = "MODE";
+  cmdJoin*      = "JOIN";
+  cmdUser*      = "USER";
+  cmdNick*      = "NICK";
+  msgPRIVMSG*   = "PRIVMSG";
+  msgNOTICE*    = "NOTICE";
+  msgQUIT*      = "QUIT";
+  msgJOIN*      = "JOIN";
+  msgPART*      = "PART";
   ctcpChar*     = 01X;
   msgACTION*    = "ACTION";
   (* irc replies rfc1459 from https://www.alien.net.au/irc/irc2numerics.html *)
-  rplWelcome		= "001";
-  rplYourHost 	= "002";
-  rplCreated 		= "003";
-  rplMyInfo 		= "004";
-  rplBounce 		= "005";
-  rplNameReply 	= "353";
+  rplWelcome    = "001";
+  rplYourHost   = "002";
+  rplCreated    = "003";
+  rplMyInfo     = "004";
+  rplBounce     = "005";
+  rplNameReply  = "353";
   rplEndOfNames = "366";
-  
+
   CR* = 0DX;
   LF* = 0AX;
 
   eofMOTD="End of /MOTD";
   errClosingLink = "ERROR :Closing Link:";
 
-  TYPE 
+  TYPE
     chn* = ARRAY 32 OF CHAR;
 
     Channel*   = RECORD
@@ -40,7 +40,7 @@ CONST
       logfile : Files.File;
       rider   : Files.Rider;
     END;
-    
+
     Channels* = POINTER TO ARRAY OF Channel;
 
     msg* = ARRAY msgLen OF CHAR;
@@ -74,22 +74,22 @@ VAR
   l : INTEGER;
 BEGIN
   COPY(cmdUser, res);
-	Strings.Append(" ", res);
-	Strings.Append(user, res);
+  Strings.Append(" ", res);
+  Strings.Append(user, res);
   Strings.Append(" 0 * :", res);
-	Strings.Append(owner, res);
+  Strings.Append(owner, res);
   (* by the spec the command is terminated by \r\n *)
 
   l := Strings.Length(res);
   res[l] := LF;
   res[l+1] := CR;
   res[l+2] := 0X;
-	(*Strings.Append(eol, res);*)
+  (*Strings.Append(eol, res);*)
 
   Strings.Append (cmdNick, res);
   Strings.Append(" ", res);
   Strings.Append (nick, res);
-	Strings.Append(eol, res);
+  Strings.Append(eol, res);
 
 END formUserNickLine;
 
@@ -120,7 +120,7 @@ BEGIN
         Strings.Append(" +i", str);
         sh.appendLFCR(str);
         (*Strings.Append(eol, str);*)
-        
+
         i := 0;
         REPEAT
           Strings.Append(cmdJoin, str);
@@ -190,7 +190,7 @@ BEGIN
   sh.zeroStr(str);
   b := Internet.Read(inst.connection, str);
   IF b THEN
-    Out.String("received: '"); 
+    Out.String("received: '");
     Out.String(str); Out.String("'"); Out.Ln;
   ELSE
     Out.String("receive failed"); Out.Ln;
@@ -214,7 +214,7 @@ END Send;
 
 PROCEDURE Auth*(inst: instance): BOOLEAN;
 VAR
-	line: ARRAY 255 OF CHAR;
+  line: ARRAY 255 OF CHAR;
   b : BOOLEAN;
 BEGIN
   formUserNickLine(inst.user, inst.owner, inst.nick, line);
@@ -508,20 +508,20 @@ BEGIN
   msg[l+1] := CR;
   msg[l+2] := 0X;
   Out.String("closing connection."); Out.Ln;
-	b := Send(inst, msg); 
+    b := Send(inst, msg);
   Disconnect(inst);
   Out.String("exiting."); Out.Ln;
 END finalize;
 
 PROCEDURE sendMsgToDst*(VAR inst: instance; VAR dst: ARRAY OF CHAR; msg: ARRAY OF CHAR);
-VAR 
+VAR
   s: POINTER TO ARRAY OF CHAR;
   i, j: LONGINT;
   b: BOOLEAN;
 BEGIN
   i := Strings.Length(msg);
   j := Strings.Length(dst);
-  NEW(s, i + j + Strings.Length(msgPRIVMSG) + 6(* to fit a colon and two spaces  and eol *));   
+  NEW(s, i + j + Strings.Length(msgPRIVMSG) + 6(* to fit a colon and two spaces  and eol *));
   COPY(msgPRIVMSG, s^);
   Strings.Append(' ', s^);
   Strings.Append(dst, s^);
@@ -558,7 +558,7 @@ BEGIN
         b := getRecipient(line, rcpt);
         b := getMsg(line, message);
      END;
-     
+
      IF messagetype = msgNOTICE THEN
         username := "";
         identname := "";
@@ -608,7 +608,7 @@ BEGIN
        END;
      END;
   ELSE
-     Out.String("unknown msg type: '"); Out.String(messagetype); Out.String("' - ignoring!"); Out.Ln; 
+     Out.String("unknown msg type: '"); Out.String(messagetype); Out.String("' - ignoring!"); Out.Ln;
   END;
 END processFurther;
 
@@ -621,7 +621,7 @@ BEGIN
   i := 0;
   REPEAT
      Out.Int(i, 0); Out.String(": '"); Out.String(pstrs^[i]^); Out.String("'"); Out.Ln;
-     processFurther(inst, pstrs^[i]^); 
+     processFurther(inst, pstrs^[i]^);
      INC(i)
   UNTIL i = LEN(pstrs^);
 END processLineByLine;
@@ -631,7 +631,7 @@ VAR
   b : BOOLEAN;
 BEGIN
   b := TRUE;
-  IF isPing(text) THEN 
+  IF isPing(text) THEN
     Pong(inst, text);
   END;
   IF error(text) THEN

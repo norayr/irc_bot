@@ -7,9 +7,10 @@ l : LONGINT;
 L0 : StringList.TList;
 
 PROCEDURE list(VAR s : StringList.TStringList);
-VAR e : StringList.Node;
-       i : INTEGER;
-    L : StringList.TList;   
+VAR
+  e : StringList.Node;
+  i : INTEGER;
+  L : StringList.TList;
 BEGIN
    NEW(e);
    i := 0;
@@ -29,9 +30,9 @@ BEGIN
    strs := StringList.Create();
    (*str.str := "000";*)
    l := strs.AddString(strs, "000");
-   
+
    strs.AppendString(strs, "001");
-   
+
    strs.AppendString(strs, "002");
 
    NEW(str);
@@ -39,11 +40,11 @@ BEGIN
    NEW(L0);
    L0 := strs;
    strs.Append(L0, str);
-   
+
    strs.AppendString(strs, "004");
-   
+
    strs.AppendString(strs, "005");
-   
+
    l := strs.AddString(strs, "006");
 
    Out.Int(strs.Count, 0); Out.Ln;
@@ -53,9 +54,9 @@ BEGIN
    NEW(str);
    str.str := "aaa";
    strs.Insert(L0, 6, str);
-    
+
    list(strs);
-   Out.Ln; 
+   Out.Ln;
    l := strs.IndexOf(strs, "000");
    Out.String ("index "); Out.Int (l,0); Out.Ln;
 

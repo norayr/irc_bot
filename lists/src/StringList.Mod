@@ -2,19 +2,19 @@ MODULE StringList;
 (* Oberon implementation without methods *)
 IMPORT S := Sys, List, strutils;
 
-TYPE 
+TYPE
 
       TObject* = S.TObject;
   TObjectDesc* = S.TObjectDesc;
        string* = S.string;
       integer* = S.integer;
-   
+
   TString* = POINTER TO TStringDesc;
-  
+
   TStringDesc =RECORD (S.TObjectDesc)
       str* : string
   END;
-   
+
      Node* = List.Node;
  NodeDesc* = List.NodeDesc;
 
@@ -23,7 +23,7 @@ TYPE
       TStringList* = POINTER TO TStringListDesc;
 
       TStringListDesc* = RECORD (List.TListDesc)
-	 IndexOf* : PROCEDURE (VAR l : TStringList; s : string) : integer;
+         IndexOf* : PROCEDURE (VAR l : TStringList; s : string) : integer;
        AddString* : PROCEDURE (l : TStringList; s : string) : integer;
     AppendString* : PROCEDURE (l : TStringList; s : string);
       END;
@@ -37,13 +37,13 @@ TYPE
     NEW(e);
     e := l.First;
     i := 0;
-    
+
     REPEAT
 
           IF strutils.Compare (s, e.obj(TString).str) = strutils.equal THEN
-              found := TRUE;	  
+              found := TRUE;
           ELSE
-             e := e.next;       
+             e := e.next;
              INC(i);
           END;
 
@@ -64,7 +64,7 @@ TYPE
     i := l.Add (l, str);
     RETURN i
  END AddString;
- 
+
  PROCEDURE AppendString*(l : TStringList; s : string);
     VAR str : TString;
  BEGIN
@@ -102,5 +102,5 @@ l.AppendString:= AppendString;
     IF l.First = NIL THEN l.Last := NIL END;
  END Delete;
 *)
- 
+
 END StringList.

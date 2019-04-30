@@ -5,7 +5,7 @@ CONST
   CR* = 0DX;
   LF* = 0AX;
 
-TYPE 
+TYPE
   pstring* = POINTER TO ARRAY OF CHAR;
   pstrings* = POINTER TO ARRAY OF pstring;
 

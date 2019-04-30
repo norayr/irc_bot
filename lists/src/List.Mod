@@ -2,7 +2,7 @@ MODULE List;
 (* Oberon implementation without methods *)
 IMPORT S := Sys;
 
-TYPE 
+TYPE
      TObject* = S.TObject;
       integer*= S.integer;
 
@@ -11,17 +11,17 @@ TYPE
     NodeDesc* = RECORD
          obj* : TObject;
         next* : Node;
-	END;
+    END;
 
            TList* = POINTER TO TListDesc;
 
        TListDesc* = RECORD (S.TObjectDesc)
           Create* : PROCEDURE () : TList;
             Free* : PROCEDURE (l : TList);
-	   Clear* : PROCEDURE (l : TList);
+           Clear* : PROCEDURE (l : TList);
              Add* : PROCEDURE (l : TList; s : TObject) : integer;
-          Append* : PROCEDURE (l : TList; s : TObject);	     
-	  Insert* : PROCEDURE (l : TList; i : integer; s : TObject);
+          Append* : PROCEDURE (l : TList; s : TObject);
+          Insert* : PROCEDURE (l : TList; i : integer; s : TObject);
           Delete* : PROCEDURE (l : TList; i : integer);
            Empty* : PROCEDURE (l : TList) : BOOLEAN;
              Get* : PROCEDURE (l : TList; k : integer) : Node;
@@ -43,7 +43,7 @@ TYPE
        l.Last.next := e;
     END;
     l.Last := e;
-    INC(l.Count);           
+    INC(l.Count);
     l.res := TRUE;
     RETURN (l.Count - 1);
  END Add;
@@ -69,7 +69,7 @@ TYPE
     VAR e, u, p : Node;
         j : integer;
  BEGIN
-    l.res := FALSE; 
+    l.res := FALSE;
     NEW(e);
     e.obj := s;
     NEW(u); NEW(p);
@@ -86,7 +86,7 @@ TYPE
        END;
        p.next := e;
        e.next := u;
-    END;   
+    END;
     l.res := TRUE;
     INC(l.Count);
  END Insert;
@@ -99,9 +99,9 @@ TYPE
  END Clear;
 
  PROCEDURE Free*(l : TList);
- 
+
  BEGIN
- 
+
  END Free;
 
  PROCEDURE Get*(l : TList; k : integer) : Node;
@@ -116,7 +116,7 @@ TYPE
        e := l.First;
        WHILE i # k DO
           IF e # NIL THEN e := e.next END;
-	  INC(i);
+          INC(i);
        END;
        l.res := TRUE
     END;
@@ -132,17 +132,17 @@ TYPE
        NEW(p); NEW(e);
        e := l.First;
        p := l.First;
-       IF k = 0 THEN 
-          l.First := l.First.next 
+       IF k = 0 THEN
+          l.First := l.First.next
        ELSE
           i := 0;
           WHILE i # k DO
-             p := e;
-	     e := e.next;
-	     INC(i);
+            p := e;
+            e := e.next;
+            INC(i);
           END;
           IF e.next # NIL THEN p.next := e.next ELSE p.next := NIL END;
-       END;	  
+       END;
        DEC(l.Count);
        l.res := TRUE;
     END;
@@ -150,7 +150,7 @@ TYPE
 
 PROCEDURE Empty* (l : TList) : BOOLEAN;
  BEGIN
-    RETURN l.First = NIL  
+    RETURN l.First = NIL
  END Empty;
 
  PROCEDURE Create* () : TList;
