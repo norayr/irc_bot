@@ -5,7 +5,7 @@ IMPORT IRC, Out, Strings := ooc2Strings, Platform, StringList, oocIntStr, struti
 CONST
   strListLen = 100;
 (* i am moving these to global section to make possible for interrupt handler to access instance *)
-VAR 
+VAR
   inst: IRC.instance;
   channels : IRC.Channels;
   b: BOOLEAN;
@@ -43,7 +43,7 @@ BEGIN
    k := s.Count - num;
    REPEAT
       e := s.Get(L, i);
-      IF e # NIL THEN 
+      IF e # NIL THEN
         IF i >= k THEN
           Platform.Delay(1000); (* to prevent being killed for flood *)
           Out.String (e.obj(StringList.TString).str); Out.Ln;
@@ -98,7 +98,7 @@ BEGIN
              listToUser(stringList, user, j);
          ELSE
            tlk := "I do remember only last ";
-           oocIntStr.IntToStr(strListLen, num); 
+           oocIntStr.IntToStr(strListLen, num);
            Strings.Append(num, tlk);
            Strings.Append(" messages.", tlk);
            IRC.sendMsgToDst(inst, user, tlk);
