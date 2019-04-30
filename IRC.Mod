@@ -444,7 +444,7 @@ BEGIN
     Out.String("logging about: "); Out.String(username); Out.String(", "); Out.String(messagetype); Out.String(", "); Out.String(rcpt); Out.Ln;
     i := 0; b := FALSE;
     REPEAT
-      Out.String("is "); Out.String(inst.channelList^[i].channel); Out.String("="); Out.String(rcpt); Out.String("?"); Out.Ln; 
+      Out.String("is "); Out.String(inst.channelList^[i].channel); Out.String("="); Out.String(rcpt); Out.String("?"); Out.Ln;
       IF inst.channelList^[i].channel = rcpt THEN b := TRUE END;
       INC(i);
     UNTIL (i = LEN(inst.channelList^)) OR b;
@@ -459,7 +459,7 @@ BEGIN
             Strings.Append("***", str);
             Strings.Append(username, str);
             Strings.Append(" ", str);
-            sh.getTillEOL(message, j+Strings.Length(msgACTION), str0); 
+            sh.getTillEOL(message, j+Strings.Length(msgACTION), str0);
             Strings.Append(str0, str);
           ELSE
             Strings.Append(username, str);

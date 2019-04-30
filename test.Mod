@@ -1,6 +1,6 @@
 MODULE test; (* noch 13.4.2017 / 18.5.2017*)
 
-IMPORT IRC, Out, Strings := ooc2Strings, Platform, StringList, oocIntStr, strutils, sh:= stringHelpers;
+IMPORT IRC, Out, Strings := ooc2Strings, Platform, StringList, oocIntStr, strutils, sh:= stringHelpers, Files;
 
 CONST
   strListLen = 100;
@@ -58,7 +58,7 @@ END listToUser;
 (*
 PROCEDURE onMessage(VAR msg : ARRAY OF CHAR);
 BEGIN
-   Out.String("callback procedure is running, youhoo!"); Out.Ln; 
+   Out.String("callback procedure is running, youhoo!"); Out.Ln;
    Out.String("input:"); Out.Ln;
    Out.String(msg); Out.String("|"); Out.Ln;
    Out.Ln;
@@ -75,9 +75,9 @@ VAR
   pstr: strutils.pstring;
 BEGIN
   Strings.Extract(msg, 0, 4, tmp);
-  IF (tmp = "help") THEN 
+  IF (tmp = "help") THEN
      tlk := "Type 'last n' to get last n messages I remember. I do remember only last ";
-     oocIntStr.IntToStr(strListLen, num); 
+     oocIntStr.IntToStr(strListLen, num);
      Strings.Append(num, tlk);
      Strings.Append(" messages.", tlk);
      IRC.sendMsgToDst(inst, user, tlk);
@@ -218,6 +218,57 @@ BEGIN
    HALT(0);
 END interrupt;
 
+PROCEDURE readLine(VAR r : Files.Rider; VAR s: ARRAY OF CHAR);
+VAR
+  i : INTEGER;
+  b : SHORTINT;
+BEGIN
+  i := 0;
+  REPEAT
+    Files.Read(r, b);
+    IF b >= 32 THEN
+      s[i] := CHR(b)
+    END;
+      INC(i)
+  UNTIL (b = 10(*0AX*)) OR r.eof;
+END readLine;
+
+PROCEDURE log2strings(VAR filename: ARRAY OF CHAR; VAR strs: StringList.TStringList);
+VAR
+  f : Files.File;
+  r : Files.Rider;
+  tmpstr: StringList.TString;
+  s, t: StringList.string;
+  pos: INTEGER;
+  b : BOOLEAN;
+BEGIN
+  f := Files.Old(filename);
+  IF f # NIL THEN
+    Files.Set(r, f, 0);
+    REPEAT
+      readLine(r, s);
+      COPY("joined ", t);
+      Strings.Append(filename, t);
+      Strings.FindNext(t, s, 0, b, pos);
+      IF ~b THEN
+        Strings.FindNext(") ", s, 0, b, pos);
+        IF b THEN
+          NEW(tmpstr);
+          Strings.Extract(s, pos+2, Strings.Length(s) - pos+2, tmpstr.str);
+          IF stringList.Count < strListLen THEN
+            stringList.Append(stringList, tmpstr)
+          ELSE
+            stringList.Delete(stringList, 0);
+            stringList.Append(stringList, tmpstr)
+          END;
+          Out.String("now list looks like:"); Out.Ln;
+          list(stringList)
+        END
+      END
+    UNTIL r.eof (*Files.Pos(r) >= Files.Length(f) - 1)*);
+  END
+END log2strings;
+
 BEGIN
   inst.owner := "norayr_tanakian";
   inst.user := "norayr_tanakian";
@@ -236,10 +287,10 @@ BEGIN
   IRC.initChannelList(inst, channels);
 
   Platform.SetInterruptHandler(interrupt);
-  
+
   (* vocbot specific functionality, buffer to store last n messages *)
   stringList := StringList.Create();
-
+  log2strings(channels[0].channel, stringList);
   IF IRC.Connect(inst) # FALSE THEN
     b := IRC.Auth(inst);
     IRC.Loop(inst);
