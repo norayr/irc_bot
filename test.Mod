@@ -76,10 +76,16 @@ VAR
 BEGIN
   Strings.Extract(msg, 0, 4, tmp);
   IF (tmp = "help") THEN
-     tlk := "Type 'last n' to get last n messages I remember. I do remember only last ";
+     tlk := "Type 'last n' to get last n messages I remember. I do remember not more, than last ";
      oocIntStr.IntToStr(strListLen, num);
      Strings.Append(num, tlk);
      Strings.Append(" messages.", tlk);
+     IRC.sendMsgToDst(inst, user, tlk);
+     Platform.Delay(1000);
+     tlk := "Currently I remember ";
+     oocIntStr.IntToStr(stringList.Count, num);
+     Strings.Append(num, tlk);
+     Strings.Append(" lines.", tlk);
      IRC.sendMsgToDst(inst, user, tlk);
   ELSIF (tmp = "last") THEN
      i := strutils.WordCount(msg, ' ');
