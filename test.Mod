@@ -234,7 +234,7 @@ BEGIN
     Files.Read(r, b);
     (*IF b >= 32 THEN*)
       IF b = 10 THEN
-        s[i] := 0AX
+        s[i] := 0X
       ELSE
         s[i] := CHR(b)
       END;
