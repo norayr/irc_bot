@@ -280,7 +280,7 @@ END log2strings;
 BEGIN
   inst.owner := "norayr_tanakian";
   inst.user := "norayr_tanakian";
-  inst.nick := "vocbot";
+  inst.nick := "voc_bot";
   inst.host := "irc.freenode.net";
   inst.port := "6667";
   inst.callbackPrivate := onPrivateMessage;
