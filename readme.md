@@ -3,11 +3,21 @@ this is an IRC bot written in Oberon.
 behavior
 ========
 this bot can join the room(s), and log its activity.
-you should talk to it privately, and ask for `last n` messages, if you want to know what was happening in the room recently.
-however, all the messages are logged to the output log files, that are created in the directory, you run it from.
+
+its main purpose to remember channel history, and tell it to those who asks.
+
+hopefully you can find `vocbot` at the `#oberon` channel on `irc.freenode.net` and can talk to it to understand how it works.
+
+you are supposed talk to it privately.
 if you don't talk to it privately, it'll open a private chat and suggest to chat there itself.
 
-the configuration should be done before compilation.
+the most important command is `help` and bot will tell you how to use it.
+
+in particular, you can ask for `last n` messages, if you want to know what was happening in the room recently.
+
+keep in mind that all the messages are logged to the output log files in the directory you run it from.
+
+the configuration should be done before compilation. sorry for that.
 there is no separate config file now. more on that in the build section of this readme.
 
 get the source
