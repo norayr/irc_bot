@@ -1,12 +1,17 @@
-
-VOC = /opt/voc/bin/voc
+mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
+mkfile_dir_path := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+build_dir_path := $(mkfile_dir_path)/build
+current_dir := $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
+BLD := $(mkfile_dir_path)/build
 
 all:
-	$(VOC) -s lists/src/Sys.Mod lists/src/strutils.Mod lists/src/List.Mod lists/src/StringList.Mod
-	$(VOC) -s types.Mod sockets.Mod netdb.Mod Internet.Mod stringHelpers.Mod time.Mod IRC.Mod test.Mod -m
+	mkdir -p $(mkfile_dir_path)
+	cd $(CURDIR)/$(BUILD)
+	make -f $(mkfile_dir_path)/dps/lists/makefile BUILD=$(BLD)
+	make -f $(mkfile_dir_path)/dps/Internet/makefile BUILD=$(BLD)
+	make -f $(mkfile_dir_path)/dps/time/makefile BUILD=$(BLD)
+	make -f $(mkfile_dir_path)/dps/irc/makefile BUILD=$(BLD)
+	cd $(BLD) && voc $(mkfile_dir_path)/src/vocbot.Mod -m
 
 clean:
-	rm *.h
-	rm *.c
-	rm *.o
-	rm *.sym
+			if [ -d "$(BLD)" ]; then rm -rf $(BLD); fi

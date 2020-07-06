@@ -1,10 +1,11 @@
-MODULE test; (* noch 13.4.2017 / 18.5.2017*)
+MODULE vocbot; (* noch 13.4.2017 / 18.5.2017*)
 
-IMPORT IRC, Out, Strings := ooc2Strings, Platform, StringList, oocIntStr, strutils, sh:= stringHelpers, Files;
+IMPORT IRC, Out, Strings := ooc2Strings, Platform, StringList, oocIntStr, strutils, Files;
 
 CONST
   strListLen = 100;
 (* i am moving these to global section to make possible for interrupt handler to access instance *)
+
 VAR
   inst: IRC.instance;
   channels : IRC.Channels;
@@ -23,7 +24,7 @@ BEGIN
    L := s;
    REPEAT
       e := s.Get(L, i);
-      IF e # NIL THEN Out.String (e.obj(StringList.TString).str); Out.Ln END;
+      IF e # NIL THEN Out.String (e.obj(StringList.TString).str^); Out.Ln END;
       (*Out.String (e.string); Out.Ln;*)
       INC(i);
    UNTIL i = s.Count;
@@ -46,8 +47,8 @@ BEGIN
       IF e # NIL THEN
         IF i >= k THEN
           Platform.Delay(1000); (* to prevent being killed for flood *)
-          Out.String (e.obj(StringList.TString).str); Out.Ln;
-          IRC.sendMsgToDst(inst, user, e.obj(StringList.TString).str);
+          Out.String (e.obj(StringList.TString).str^); Out.Ln;
+          IRC.sendMsgToDst(inst, user, e.obj(StringList.TString).str^);
         END;
       END;
       INC(i);
@@ -139,7 +140,7 @@ END onPrivateMessage;
 
 PROCEDURE onPublicMessage(VAR msg, msgtype, user, ident, rcpt, host: ARRAY OF CHAR);
 VAR
-  tmpstr: StringList.TString;
+  tmpstr: ARRAY IRC.msgLen OF CHAR;
   (* for handling ACTION messages *)
   b0: BOOLEAN;
   j: INTEGER;
@@ -155,26 +156,25 @@ BEGIN
   Out.String("*** that's it ***"); Out.Ln;
   (*IF msgtype # IRC.msgJOIN THEN IRC.sendMsgToDst(inst, rcpt, "test back") END;*)
   IF msgtype = IRC.msgPRIVMSG THEN
-     NEW(tmpstr);
-     tmpstr.str := "";
+     COPY("", tmpstr);
      b0 := FALSE;
      Strings.FindNext(IRC.msgACTION, msg, 1, b0, j);
      IF b0 THEN (* handle actions *)
-        Strings.Append("***", tmpstr.str);
-        Strings.Append(user, tmpstr.str);
-        Strings.Append(" ", tmpstr.str);
-        sh.getTillEOL(msg, j+Strings.Length(IRC.msgACTION), str0);
-        Strings.Append(str0, tmpstr.str);
+        Strings.Append("***", tmpstr);
+        Strings.Append(user, tmpstr);
+        Strings.Append(" ", tmpstr);
+        strutils.getTillEOL(msg, j+Strings.Length(IRC.msgACTION), str0);
+        Strings.Append(str0, tmpstr);
      ELSE
-        tmpstr.str := user;
-        Strings.Append(": ", tmpstr.str);
-        Strings.Append(msg, tmpstr.str);
+        COPY(user, tmpstr);
+        Strings.Append(": ", tmpstr);
+        Strings.Append(msg, tmpstr);
      END;
      IF stringList.Count < strListLen THEN
-       stringList.Append(stringList, tmpstr)
+       stringList.AppendString(stringList, tmpstr)
      ELSE
        stringList.Delete(stringList, 0);
-       stringList.Append(stringList, tmpstr)
+       stringList.AppendString(stringList, tmpstr)
      END;
      Out.String("now list looks like:"); Out.Ln;
      list(stringList);
@@ -184,7 +184,7 @@ END onPublicMessage;
 PROCEDURE onPublicMessageWithMention(VAR msg, msgtype, user, ident, rcpt, host: ARRAY OF CHAR);
 VAR
   tmp: ARRAY IRC.msgLen OF CHAR;
-  tmpstr: StringList.TString;
+  tmpstr: ARRAY IRC.msgLen OF CHAR;
 BEGIN
   Out.String("*** public message, bot name mentioned ***"); Out.Ln;
   Out.String("message: '"); Out.String(msg); Out.Char("'"); Out.Ln;
@@ -199,17 +199,16 @@ BEGIN
   IRC.sendMsgToDst(inst, user, tmp);
   (* log this *)
   IF msgtype = IRC.msgPRIVMSG THEN
-     NEW(tmpstr);
-      tmpstr.str := user;
-      Strings.Append(": ", tmpstr.str);
-      Strings.Append(inst.nick, tmpstr.str);
-      Strings.Append(": ", tmpstr.str);
-      Strings.Append(msg, tmpstr.str);
+      COPY(user, tmpstr);
+      Strings.Append(": ", tmpstr);
+      Strings.Append(inst.nick, tmpstr);
+      Strings.Append(": ", tmpstr);
+      Strings.Append(msg, tmpstr);
      IF stringList.Count < strListLen THEN
-       stringList.Append(stringList, tmpstr)
+       stringList.AppendString(stringList, tmpstr)
      ELSE
        stringList.Delete(stringList, 0);
-       stringList.Append(stringList, tmpstr)
+       stringList.AppendString(stringList, tmpstr)
      END;
      Out.String("now list looks like:"); Out.Ln;
      list(stringList)
@@ -247,8 +246,8 @@ PROCEDURE log2strings(VAR filename: ARRAY OF CHAR; VAR strs: StringList.TStringL
 VAR
   f : Files.File;
   r : Files.Rider;
-  tmpstr: StringList.TString;
-  s, t: StringList.string;
+  tmpstr: ARRAY IRC.msgLen OF CHAR;
+  s, t: ARRAY IRC.msgLen OF CHAR;
   pos: INTEGER;
   b : BOOLEAN;
 BEGIN
@@ -263,13 +262,12 @@ BEGIN
       IF ~b THEN
         Strings.FindNext(") ", s, 0, b, pos);
         IF b THEN
-          NEW(tmpstr);
-          Strings.Extract(s, pos+2, Strings.Length(s) - pos+2, tmpstr.str);
+          Strings.Extract(s, pos+2, Strings.Length(s) - pos+2, tmpstr);
           IF stringList.Count < strListLen THEN
-            stringList.Append(stringList, tmpstr)
+            stringList.AppendString(stringList, tmpstr)
           ELSE
             stringList.Delete(stringList, 0);
-            stringList.Append(stringList, tmpstr)
+            stringList.AppendString(stringList, tmpstr)
           END;
           Out.String("now list looks like:"); Out.Ln;
           list(stringList)
@@ -292,7 +290,7 @@ BEGIN
 
 
   NEW(channels, 1); (* in this particular case we only login to one channel *)
-  channels[0].channel := "#oberon";
+  channels[0].channel := "#lazarus-ide";
   IRC.setLogging(inst, TRUE);
   IRC.initChannelList(inst, channels);
 
@@ -306,4 +304,4 @@ BEGIN
     IRC.Loop(inst);
   END;
 
-END test.
+END vocbot.
