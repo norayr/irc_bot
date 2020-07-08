@@ -10,7 +10,7 @@ VAR
   inst: IRC.instance;
   channels : IRC.Channels;
   b: BOOLEAN;
-  stringList: StringList.TStringList; (* buffer to store lines *)
+  stringList, stringList2: StringList.TStringList; (* buffer to store lines *)
 
 (* for debug *)
 PROCEDURE list(VAR s : StringList.TStringList);
@@ -289,16 +289,19 @@ BEGIN
 
 
 
-  NEW(channels, 1); (* in this particular case we only login to one channel *)
-  channels[0].channel := "#lazarus-ide";
+  NEW(channels, 2); (* in this particular case we only login to one channel *)
+  channels[0].channel := "#fpc";
+  channels[1].channel := "#ada";
   IRC.setLogging(inst, TRUE);
   IRC.initChannelList(inst, channels);
 
   Platform.SetInterruptHandler(interrupt);
 
   (* vocbot specific functionality, buffer to store last n messages *)
-  stringList := StringList.Create();
+  stringList  := StringList.Create();
+  stringList2 := StringList.Create();
   log2strings(channels[0].channel, stringList);
+  log2strings(channels[1].channel, stringList2);
   IF IRC.Connect(inst) # FALSE THEN
     b := IRC.Auth(inst);
     IRC.Loop(inst);
