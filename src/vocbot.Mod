@@ -281,11 +281,11 @@ BEGIN
 END log2strings;
 
 BEGIN
-  inst := IRC.Create("_tanakian", "inky", "_gossip_bot", "irc.libera.chat", "6667", onPrivateMessage, onPublicMessage, onPublicMessageWithMention);
+  inst := IRC.Create("_tanakian", "mobot", "mobot", "irc.libera.chat", "6667", "", TRUE, onPrivateMessage, onPublicMessage, onPublicMessageWithMention);
 
   (*channel := IRC.AssignChannel(inst, "#fpc", TRUE);*)
   NEW(channels, 1);
-  channels[0].channel := '#test';
+  channels[0].channel := '#fpc';
   IRC.setLogging(inst, TRUE);
   IRC.initChannelList(inst, channels);
 
