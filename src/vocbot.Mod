@@ -10,7 +10,7 @@ VAR
   inst: IRC.instance;
   channels : IRC.Channels;
   b: BOOLEAN;
-  stringList, stringList2: StringList.TStringList; (* buffer to store lines *)
+  stringList: StringList.TStringList; (* buffer to store lines *)
 
 (* for debug *)
 PROCEDURE list(VAR s : StringList.TStringList);
@@ -77,6 +77,9 @@ VAR
 BEGIN
   Strings.Extract(msg, 0, 4, tmp);
   IF (tmp = "help") THEN
+     tlk := "i'm a humble irc bot written in oberon. https://github.com/norayr/irc_bot/";
+     IRC.sendMsgToDst(inst, user, tlk);
+     Platform.Delay(1000);
      tlk := "Type 'last n' to get last n messages I remember. I do remember not more, than last ";
      oocIntStr.IntToStr(strListLen, num);
      Strings.Append(num, tlk);
@@ -278,20 +281,11 @@ BEGIN
 END log2strings;
 
 BEGIN
-  inst.owner := "norayr_tanakian";
-  inst.user := "norayr_tanakian";
-  inst.nick := "voc_bot";
-  inst.host := "irc.freenode.net";
-  inst.port := "6667";
-  inst.callbackPrivate := onPrivateMessage;
-  inst.callbackPublic := onPublicMessage;
-  inst.callbackPublicMention := onPublicMessageWithMention;
+  inst := IRC.Create("_tanakian", "inky", "_gossip_bot", "irc.libera.chat", "6667", onPrivateMessage, onPublicMessage, onPublicMessageWithMention);
 
-
-
-  NEW(channels, 2); (* in this particular case we only login to one channel *)
-  channels[0].channel := "#fpc";
-  channels[1].channel := "#ada";
+  (*channel := IRC.AssignChannel(inst, "#fpc", TRUE);*)
+  NEW(channels, 1);
+  channels[0].channel := '#test';
   IRC.setLogging(inst, TRUE);
   IRC.initChannelList(inst, channels);
 
@@ -299,9 +293,8 @@ BEGIN
 
   (* vocbot specific functionality, buffer to store last n messages *)
   stringList  := StringList.Create();
-  stringList2 := StringList.Create();
   log2strings(channels[0].channel, stringList);
-  log2strings(channels[1].channel, stringList2);
+
   IF IRC.Connect(inst) # FALSE THEN
     b := IRC.Auth(inst);
     IRC.Loop(inst);
