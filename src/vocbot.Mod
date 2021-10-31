@@ -99,9 +99,7 @@ BEGIN
   ELSIF (tmp = "last") THEN
      i := strutils.WordCount(msg, ' ');
      IF i = 2 THEN
-      				Out.String("i=");Out.Int(i,0);Out.Ln;
        pstr := strutils.ExtractWord(2, msg, ' ');
-                                Out.String("pstr=");Out.String(pstr^);Out.Ln;
        oocIntStr.StrToInt(pstr^, j, res);
        IF res = 0 THEN
          IF j <= strListLen THEN
@@ -112,7 +110,6 @@ BEGIN
              Strings.Append(" lines.", tlk);
              IRC.sendMsgToDst(inst, user, tlk);
            END;
-	                     Out.String("listToUser starting"); Out.Ln; 
              listToUser(inst, stringList, user, j);
          ELSE
            tlk := "I do remember only last ";
@@ -120,7 +117,6 @@ BEGIN
            Strings.Append(num, tlk);
            Strings.Append(" messages.", tlk);
            IRC.sendMsgToDst(inst, user, tlk);
-	                        Out.String("listToUser2 starting"); Out.Ln;
            listToUser(inst, stringList, user, strListLen);
          END;
        ELSE
