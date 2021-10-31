@@ -1,16 +1,21 @@
 MODULE vocbot; (* noch 13.4.2017 / 18.5.2017*)
 
-IMPORT IRC, Out, Strings := ooc2Strings, Platform, StringList, oocIntStr, strutils, Files;
+IMPORT IRC, opts, Out, Strings := ooc2Strings, StringList, oocIntStr, strutils, Files, Platform;
 
 CONST
   strListLen = 100;
-(* i am moving these to global section to make possible for interrupt handler to access instance *)
 
 VAR
-  inst: IRC.instance;
-  channels : IRC.Channels;
-  b: BOOLEAN;
   stringList: StringList.TStringList; (* buffer to store lines *)
+  inst: IRC.instance;
+
+PROCEDURE interrupt(i: LONGINT);
+BEGIN
+ (* here we need to flush files to disk before exiting. and probably close the irc connection *)
+   Out.String("interrupt caught."); Out.Ln;
+   IRC.finalize(inst);
+   HALT(0);
+END interrupt;
 
 (* for debug *)
 PROCEDURE list(VAR s : StringList.TStringList);
@@ -31,7 +36,7 @@ BEGIN
 END list;
 
 (* sends list of messages to the requestor *)
-PROCEDURE listToUser(VAR s : StringList.TStringList; user: ARRAY OF CHAR; num: LONGINT);
+PROCEDURE listToUser(VAR inst: IRC.instance; VAR s : StringList.TStringList; user: ARRAY OF CHAR; num: LONGINT);
 VAR e : StringList.Node;
        i : INTEGER;
     L : StringList.TList;
@@ -66,7 +71,7 @@ BEGIN
 END onMessage;
 *)
 
-PROCEDURE processPrivateMessage(VAR msg, user: ARRAY OF CHAR);
+PROCEDURE processPrivateMessage(VAR inst: IRC.instance; VAR msg, user: ARRAY OF CHAR);
 VAR
   tmp, num: ARRAY 16 OF CHAR;
   tlk: ARRAY 128 OF CHAR;
@@ -105,14 +110,14 @@ BEGIN
              Strings.Append(" lines.", tlk);
              IRC.sendMsgToDst(inst, user, tlk);
            END;
-             listToUser(stringList, user, j);
+             listToUser(inst, stringList, user, j);
          ELSE
            tlk := "I do remember only last ";
            oocIntStr.IntToStr(strListLen, num);
            Strings.Append(num, tlk);
            Strings.Append(" messages.", tlk);
            IRC.sendMsgToDst(inst, user, tlk);
-           listToUser(stringList, user, strListLen);
+           listToUser(inst, stringList, user, strListLen);
          END;
        ELSE
          tlk := "number expected, but got '";
@@ -128,7 +133,7 @@ BEGIN
   END;
 END processPrivateMessage;
 
-PROCEDURE onPrivateMessage(VAR msg, msgtype, user, ident, host: ARRAY OF CHAR);
+PROCEDURE onPrivateMessage(VAR inst: IRC.instance; VAR msg, msgtype, user, ident, host: ARRAY OF CHAR);
 BEGIN
   Out.String("*** private message ***"); Out.Ln;
   Out.String("message: '"); Out.String(msg); Out.Char("'"); Out.Ln;
@@ -138,10 +143,10 @@ BEGIN
   Out.String("host: '"); Out.String(host); Out.Char("'"); Out.Ln;
   Out.String("*** that's it ***"); Out.Ln;
   (*IRC.sendMsgToDst(inst, user, "hello, nice to meet you");*)
-  processPrivateMessage(msg, user);
+  processPrivateMessage(inst, msg, user);
 END onPrivateMessage;
 
-PROCEDURE onPublicMessage(VAR msg, msgtype, user, ident, rcpt, host: ARRAY OF CHAR);
+PROCEDURE onPublicMessage(VAR inst: IRC.instance; VAR msg, msgtype, user, ident, rcpt, host: ARRAY OF CHAR);
 VAR
   tmpstr: ARRAY IRC.msgLen OF CHAR;
   (* for handling ACTION messages *)
@@ -184,7 +189,7 @@ BEGIN
   END;
 END onPublicMessage;
 
-PROCEDURE onPublicMessageWithMention(VAR msg, msgtype, user, ident, rcpt, host: ARRAY OF CHAR);
+PROCEDURE onPublicMessageWithMention(VAR inst: IRC.instance; VAR msg, msgtype, user, ident, rcpt, host: ARRAY OF CHAR);
 VAR
   tmp: ARRAY IRC.msgLen OF CHAR;
   tmpstr: ARRAY IRC.msgLen OF CHAR;
@@ -217,14 +222,6 @@ BEGIN
      list(stringList)
   END
 END onPublicMessageWithMention;
-
-PROCEDURE interrupt(i: LONGINT);
-BEGIN
-(* here we need to flush files to disk before exiting. and probably close the irc connection *)
-   Out.String("interrupt caught."); Out.Ln;
-   IRC.finalize(inst);
-   HALT(0);
-END interrupt;
 
 PROCEDURE readLine(VAR r : Files.Rider; VAR s: ARRAY OF CHAR);
 VAR
@@ -280,16 +277,110 @@ BEGIN
   END
 END log2strings;
 
+PROCEDURE processOptions(VAR owner, user, nick, host, port, pass, room: ARRAY OF CHAR);
+VAR
+  options: opts.Options;
+ foptions: opts.Options;
+      opt, fopt: opts.Option;
 BEGIN
-  inst := IRC.Create("_tanakian", "mobot", "mobot_", "irc.libera.chat", "6667", "", TRUE, onPrivateMessage, onPublicMessage, onPublicMessageWithMention);
+  options := opts.createOptions();
+  foptions := opts.createOptions();
+  opt := opts.createOpt();
+  opts.setOptName(opt, "-h");
+  opts.setOptLName(opt, "--host");
+  opts.setOptHasVal(opt, TRUE);
+  opts.setOptDesc(opt, "IRC host name");
+  opts.setOptRequired(opt, TRUE);
+  options.add(options, opt);
 
-  (*channel := IRC.AssignChannel(inst, "#fpc", TRUE);*)
+  opt := opts.createOpt();
+  opts.setOptName(opt, "-p");
+  opts.setOptLName(opt, "--port");
+  opts.setOptHasVal(opt, TRUE);
+  opts.setOptRequired(opt, TRUE);
+  opts.setOptDesc(opt, "server port");
+  options.add(options, opt);
+
+  opt := opts.createOpt();
+  opts.setOptName(opt, "-o");
+  opts.setOptLName(opt, "--owner");
+  opts.setOptHasVal(opt, TRUE);
+  opts.setOptRequired(opt, TRUE);
+  opts.setOptDesc(opt, "account owner");
+  options.add(options, opt);
+
+  opt := opts.createOpt();
+  opts.setOptName(opt, "-u");
+  opts.setOptLName(opt, "--user");
+  opts.setOptHasVal(opt, TRUE);
+  opts.setOptRequired(opt, TRUE);
+  opts.setOptDesc(opt, "account username");
+  options.add(options, opt);
+
+  opt := opts.createOpt();
+  opts.setOptName(opt, "-n");
+  opts.setOptLName(opt, "--nick");
+  opts.setOptHasVal(opt, TRUE);
+  opts.setOptRequired(opt, TRUE);
+  opts.setOptDesc(opt, "nick to use");
+  options.add(options, opt);
+
+  opt := opts.createOpt();
+  opts.setOptName(opt, "-r");
+  opts.setOptLName(opt, "--room");
+  opts.setOptHasVal(opt, TRUE);
+  opts.setOptRequired(opt, TRUE);
+  opts.setOptDesc(opt, "room to join");
+  options.add(options, opt);
+
+  opt := opts.createOpt();
+  opts.setOptName(opt, "-w");
+  opts.setOptLName(opt, "--password");
+  opts.setOptHasVal(opt, TRUE);
+  opts.setOptRequired(opt, FALSE);
+  opts.setOptDesc(opt, "password");
+  options.add(options, opt);
+
+  foptions := opts.populateOptions(options);
+  IF opts.reqsSatisfied(options, foptions) THEN
+    Out.String("required options provided"); Out.Ln;
+  ELSE
+    Out.String("required options not provided"); Out.Ln;
+    opts.showHelp(options);
+    HALT(3);
+  END;
+  Out.Ln;
+  
+  opts.valOfOpt("-o", foptions, owner);
+  opts.valOfOpt("-u", foptions, user);
+  opts.valOfOpt("-n", foptions, nick);
+  opts.valOfOpt("-h", foptions, host);
+  opts.valOfOpt("-p", foptions, port);
+  opts.valOfOpt("-r", foptions, room);
+  opts.valOfOpt("-w", foptions, pass);
+END processOptions;
+
+PROCEDURE entrance;
+VAR
+  channels : IRC.Channels;
+  b: BOOLEAN;
+  owner, user, nick, host, port, pass, room: ARRAY 32 OF CHAR;
+BEGIN
+  processOptions(owner, user, nick, host, port, pass, room);
+  Out.String("owner: "); Out.String(owner); Out.Ln;
+  Out.String("user: "); Out.String(user); Out.Ln;
+  Out.String("nick: "); Out.String(nick); Out.Ln;
+  Out.String("host: "); Out.String(host); Out.Ln;
+  Out.String("port: "); Out.String(port); Out.Ln;
+  Out.String("room: "); Out.String(room); Out.Ln;
+  IF pass = "" THEN Out.String("password not set") ELSE Out.String("password provided, will try to authenticate") END; Out.Ln;
+  inst := IRC.Create(owner, user, nick, host, port, pass, TRUE, onPrivateMessage, onPublicMessage, onPublicMessageWithMention);
+  (*inst := IRC.Create("inky", "mobot", "mobot_", "irc.libera.chat", "6667", "", TRUE, onPrivateMessage, onPublicMessage, onPublicMessageWithMention);*)
+
   NEW(channels, 1);
-  channels[0].channel := '#test';
+  channels[0].channel := room;
   IRC.setLogging(inst, TRUE);
   IRC.initChannelList(inst, channels);
-
-  Platform.SetInterruptHandler(interrupt);
 
   (* vocbot specific functionality, buffer to store last n messages *)
   stringList  := StringList.Create();
@@ -300,4 +391,9 @@ BEGIN
     IRC.Loop(inst);
   END;
 
+END entrance;
+
+BEGIN
+  Platform.SetInterruptHandler(interrupt);
+  entrance
 END vocbot.
