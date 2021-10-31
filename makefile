@@ -11,6 +11,7 @@ all:
 	make -f $(mkfile_dir_path)/dps/Internet/makefile BUILD=$(BLD)
 	make -f $(mkfile_dir_path)/dps/time/makefile BUILD=$(BLD)
 	make -f $(mkfile_dir_path)/dps/irc/makefile BUILD=$(BLD)
+	make -f $(mkfile_dir_path)/dps/getopt/makefile BUILD=$(BLD)
 	cd $(BLD) && voc $(mkfile_dir_path)/src/vocbot.Mod -m
 
 clean:
