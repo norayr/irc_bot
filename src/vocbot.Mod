@@ -51,7 +51,7 @@ BEGIN
       e := s.Get(L, i);
       IF e # NIL THEN
         IF i >= k THEN
-          Platform.Delay(1000); (* to prevent being killed for flood *)
+          Platform.Delay(delay); (* to prevent being killed for flood *)
           Out.String (e.obj(StringList.TString).str^); Out.Ln;
           IRC.sendMsgToDst(inst, user, e.obj(StringList.TString).str^);
         END;
@@ -90,7 +90,7 @@ BEGIN
      Strings.Append(num, tlk);
      Strings.Append(" messages.", tlk);
      IRC.sendMsgToDst(inst, user, tlk);
-     Platform.Delay(1000);
+     Platform.Delay(delay);
      tlk := "Currently I remember ";
      oocIntStr.IntToStr(stringList.Count, num);
      Strings.Append(num, tlk);
