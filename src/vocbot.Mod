@@ -4,7 +4,7 @@ IMPORT IRC, opts, Out, Strings := ooc2Strings, StringList, oocIntStr, strutils, 
 
 CONST
   strListLen = 100;
-
+  delay = 2000; (*delay between sending the history messages to the user.*)
 VAR
   stringList: StringList.TStringList; (* buffer to store lines *)
   inst: IRC.instance;
@@ -84,7 +84,7 @@ BEGIN
   IF (tmp = "help") THEN
      tlk := "i'm a humble irc bot written in oberon. https://github.com/norayr/irc_bot/";
      IRC.sendMsgToDst(inst, user, tlk);
-     Platform.Delay(1000);
+     Platform.Delay(delay);
      tlk := "Type 'last n' to get last n messages I remember. I do remember not more, than last ";
      oocIntStr.IntToStr(strListLen, num);
      Strings.Append(num, tlk);
