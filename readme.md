@@ -38,29 +38,17 @@ build
 firstly, you need a compiler: [voc](https://github.com/vishaps/voc).
 once you have it, and you have `voc` binary in your path, you can proceed.
 
-there is no configuration currently, so `src/vocbot.Mod` contains a line:
+configuration
+============
 
-```
-channels[0].channel := "#lazarus-ide";
-```
+no configuration, but you need to run it with commandline arguments.
 
-change it to whichever channel you want to join.
-also, make sure to change:
+see `test.sh` for an example.
 
-```
-  inst.owner := "norayr_tanakian";
-  inst.user := "norayr_tanakian";
-  inst.nick := "vocbot";
-  inst.host := "irc.freenode.net";
-  inst.port := "6667";
-```
+there is a hardcoded configuration option, which may want to change
 
-you probably want to change `inst.owner`, `inst.user` and `inst.nick`.
-you want to leave `inst.host` and `inst.port` if you connect to freenode.
+`strListLen = 100;`
 
-the bot can connect to several rooms simultaneously.
-
-you also may want to change ```strListLen = 100;``` in the beginning of the file.
 this suggests how many lines bot will remember to tell later those who ask for the channel history.
 
 once you changed the source `src/vocbot.Mod`, compile the project with `make`.
@@ -68,4 +56,4 @@ once you changed the source `src/vocbot.Mod`, compile the project with `make`.
 running
 =======
 
-just copy the binary wherever you want from `build/vocbot` and run.
+see test.sh.
