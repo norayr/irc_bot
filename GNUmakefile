@@ -1,3 +1,4 @@
+VOC = /opt/voc/bin/voc
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 mkfile_dir_path := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 build_dir_path := $(mkfile_dir_path)/build
@@ -23,7 +24,7 @@ build_deps:
 	make -f $(mkfile_dir_path)/dps/time/GNUmakefile BUILD=$(BLD)
 	make -f $(mkfile_dir_path)/dps/irc/GNUmakefile BUILD=$(BLD)
 	make -f $(mkfile_dir_path)/dps/opts/GNUmakefile BUILD=$(BLD)
-	cd $(BLD) && voc $(mkfile_dir_path)/src/vocbot.Mod -m
+	cd $(BLD) && $(VOC) $(mkfile_dir_path)/src/vocbot.Mod -m
 
 clean:
 			if [ -d "$(BLD)" ]; then rm -rf $(BLD); fi
