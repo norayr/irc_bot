@@ -1,5 +1,7 @@
 .POSIX:
 
+CFLAGS = 
+
 DEPS      = norayr/lists    \
 	    norayr/Internet \
 	    norayr/time     \

@@ -1,6 +1,6 @@
 MODULE vocbot; (* noch 13.4.2017 / 18.5.2017*)
 
-IMPORT IRC, opts, Out, Strings := ooc2Strings, StringList, oocIntStr, strutils, Files, Platform;
+IMPORT IRC, opts, Out, Strings := ooc2Strings, StringList, oocIntStr, strUtils, Files, Platform;
 
 CONST
   strListLen = 100;
@@ -78,7 +78,7 @@ VAR
   i: INTEGER;
   j: LONGINT;
   res: SHORTINT;
-  pstr: strutils.pstring;
+  pstr: strUtils.pstring;
 BEGIN
   Strings.Extract(msg, 0, 4, tmp);
   IF (tmp = "help") THEN
@@ -97,9 +97,9 @@ BEGIN
      Strings.Append(" lines.", tlk);
      IRC.sendMsgToDst(inst, user, tlk);
   ELSIF (tmp = "last") THEN
-     i := strutils.WordCount(msg, ' ');
+     i := strUtils.WordCount(msg, ' ');
      IF i = 2 THEN
-       pstr := strutils.ExtractWord(2, msg, ' ');
+       pstr := strUtils.ExtractWord(2, msg, ' ');
        oocIntStr.StrToInt(pstr^, j, res);
        IF res = 0 THEN
          IF j <= strListLen THEN
@@ -171,7 +171,7 @@ BEGIN
         Strings.Append("***", tmpstr);
         Strings.Append(user, tmpstr);
         Strings.Append(" ", tmpstr);
-        strutils.getTillEOL(msg, j+Strings.Length(IRC.msgACTION), str0);
+        strUtils.getTillEOL(msg, j+Strings.Length(IRC.msgACTION), str0);
         Strings.Append(str0, tmpstr);
      ELSE
         COPY(user, tmpstr);
