@@ -202,7 +202,7 @@ BEGIN
   Out.String("recipient: '"); Out.String(rcpt); Out.Char("'"); Out.Ln;
   Out.String("host: '"); Out.String(host); Out.Char("'"); Out.Ln;
   Out.String("*** that's it ***"); Out.Ln;
-  tmp := user;
+  COPY(user, tmp);
   Strings.Append(": let's talk in private in order to not flood the channel. type 'help' for help.", tmp);
   IRC.sendMsgToDst(inst, user, tmp);
   (* log this *)
@@ -350,7 +350,7 @@ BEGIN
     HALT(3);
   END;
   Out.Ln;
-  
+
   opts.valOfOpt("-o", foptions, owner);
   opts.valOfOpt("-u", foptions, user);
   opts.valOfOpt("-n", foptions, nick);
