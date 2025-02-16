@@ -57,3 +57,16 @@ running
 =======
 
 see test.sh.
+
+
+testing
+=======
+
+it's possible to simulate network outage by
+
+```
+iptables -A OUTPUT -p tcp --dport 6667 -j DROP
+sleep 30
+iptables -D OUTPUT -p tcp --dport 6667 -j DROP
+```
+
