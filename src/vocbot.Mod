@@ -373,8 +373,6 @@ BEGIN
   opts.valOfOpt("-l", foptions, lstLen);
   oocIntStr.StrToInt(lstLen, listLength, res);
   IF res # oocIntStr.strAllRight THEN listLength := defListLength END;
-  Out.String("list len: "); Out.Int(listLength, 0); Out.Ln;
-  HALT(1);
 END processOptions;
 
 PROCEDURE entrance;
