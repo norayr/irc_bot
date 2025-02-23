@@ -3,11 +3,12 @@ MODULE vocbot; (* noch 13.4.2017 / 18.5.2017*)
 IMPORT IRC, opts, Out, Strings := ooc2Strings, StringList, oocIntStr, strUtils, Files, Platform;
 
 CONST
-  strListLen = 100;
   delay = 2000; (*delay between sending the history messages to the user.*)
+  defListLength = 200;
 VAR
   stringList: StringList.TStringList; (* buffer to store lines *)
   inst: IRC.instance;
+  strListLen: LONGINT;
 
 PROCEDURE interrupt(i: LONGINT);
 BEGIN
@@ -277,11 +278,13 @@ BEGIN
   END
 END log2strings;
 
-PROCEDURE processOptions(VAR owner, user, nick, host, port, pass, room: ARRAY OF CHAR);
+PROCEDURE processOptions(VAR owner, user, nick, host, port, pass, room: ARRAY OF CHAR; VAR listLength: LONGINT);
 VAR
   options: opts.Options;
  foptions: opts.Options;
       opt, fopt: opts.Option;
+      lstLen: ARRAY 5 OF CHAR;
+      res: oocIntStr.ConvResults;
 BEGIN
   options := opts.createOptions();
   foptions := opts.createOptions();
@@ -341,6 +344,15 @@ BEGIN
   opts.setOptDesc(opt, "password");
   options.add(options, opt);
 
+  opt := opts.createOpt();
+  opts.setOptName(opt, "-l");
+  opts.setOptLName(opt, "--listlength");
+  opts.setOptHasVal(opt, TRUE);
+  opts.setOptRequired(opt, FALSE);
+  opts.setOptDesc(opt, "how many lines to remember");
+  options.add(options, opt);
+
+
   foptions := opts.populateOptions(options);
   IF opts.reqsSatisfied(options, foptions) THEN
     Out.String("required options provided"); Out.Ln;
@@ -358,6 +370,11 @@ BEGIN
   opts.valOfOpt("-p", foptions, port);
   opts.valOfOpt("-r", foptions, room);
   opts.valOfOpt("-w", foptions, pass);
+  opts.valOfOpt("-l", foptions, lstLen);
+  oocIntStr.StrToInt(lstLen, listLength, res);
+  IF res # oocIntStr.strAllRight THEN listLength := defListLength END;
+  Out.String("list len: "); Out.Int(listLength, 0); Out.Ln;
+  HALT(1);
 END processOptions;
 
 PROCEDURE entrance;
@@ -366,13 +383,14 @@ VAR
   b: BOOLEAN;
   owner, user, nick, host, port, pass, room: ARRAY 32 OF CHAR;
 BEGIN
-  processOptions(owner, user, nick, host, port, pass, room);
+    processOptions(owner, user, nick, host, port, pass, room, strListLen);
   Out.String("owner: "); Out.String(owner); Out.Ln;
   Out.String("user: "); Out.String(user); Out.Ln;
   Out.String("nick: "); Out.String(nick); Out.Ln;
   Out.String("host: "); Out.String(host); Out.Ln;
   Out.String("port: "); Out.String(port); Out.Ln;
   Out.String("room: "); Out.String(room); Out.Ln;
+  Out.String("history length: "); Out.Int(strListLen, 0); Out.Ln;
   IF pass = "" THEN Out.String("password not set") ELSE Out.String("password provided, will try to authenticate") END; Out.Ln;
   inst := IRC.Create(owner, user, nick, host, port, pass, TRUE, onPrivateMessage, onPublicMessage, onPublicMessageWithMention);
   (*inst := IRC.Create("inky", "mobot", "mobot_", "irc.libera.chat", "6667", "", TRUE, onPrivateMessage, onPublicMessage, onPublicMessageWithMention);*)
