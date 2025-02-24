@@ -100,6 +100,7 @@ BEGIN
   cmdLastLength := Strings.Length(cmdLast);
   cmdSearchLength := Strings.Length(cmdSearch);
   Strings.Extract(msg, 0, cmdHelpLength, tmp);
+  Out.String("DBG: tmp='"); Out.String(tmp); Out.Char("'"); Out.Ln;
   IF (tmp = cmdHelp) THEN
      tlk := "i'm a humble irc bot written in oberon. https://github.com/norayr/irc_bot/";
      IRC.sendMsgToDst(inst, user, tlk);
@@ -115,7 +116,7 @@ BEGIN
      Strings.Append(num, tlk);
      Strings.Append(" lines.", tlk);
      IRC.sendMsgToDst(inst, user, tlk);
-  ELSIF (tmp = "last") THEN
+  ELSIF (tmp = cmdLast) THEN
      i := strUtils.WordCount(msg, ' ');
      IF i = 2 THEN
        pstr := strUtils.ExtractWord(2, msg, ' ');
@@ -148,7 +149,10 @@ BEGIN
        IRC.sendMsgToDst(inst, user, "wrong format of 'last' command.");
      END;
   ELSIF (tmp = "searc") THEN (* 'search' is 6 letters, tmp is first 6 chars *)
+     Out.String("DBG: We got 'searc'"); Out.Ln;
      Strings.Extract(msg, cmdSearchLength, SHORT(LEN(msg)) - cmdSearchLength, restMsg);
+     Out.String("DBG: msg='"); Out.String(msg); Out.String("'"); Out.Ln;
+     Out.String("DBG: restmsg='"); Out.String(restMsg); Out.String("'"); Out.Ln;
      strUtils.RemoveLeftChars(restMsg, ' ');
      IF restMsg[0] = 0X THEN
         IRC.sendMsgToDst(inst, user, "Please provide a search pattern.");
