@@ -9,6 +9,7 @@ VAR
   stringList: StringList.TStringList; (* buffer to store lines *)
   inst: IRC.instance;
   strListLen: LONGINT;
+  cmdHelp, cmdLast, cmdSearch: ARRAY 16 OF CHAR;
 
 PROCEDURE interrupt(i: LONGINT);
 BEGIN
@@ -72,21 +73,38 @@ BEGIN
 END onMessage;
 *)
 
+PROCEDURE MIN(i, j: LONGINT): LONGINT;
+BEGIN
+  IF i<=j THEN RETURN i ELSE RETURN j END
+END MIN;
+
 PROCEDURE processPrivateMessage(VAR inst: IRC.instance; VAR msg, user: ARRAY OF CHAR);
 VAR
   tmp, num: ARRAY 16 OF CHAR;
-  tlk: ARRAY 128 OF CHAR;
+  tlk: ARRAY 256 OF CHAR;
   i: INTEGER;
   j: LONGINT;
   res: SHORTINT;
   pstr: strUtils.pstring;
+  (* Variables for search command *)
+  restMsg, pattern, countStr, actualStr, msgTxt: ARRAY IRC.msgLen OF CHAR;
+  searchCount, actualCount: LONGINT;
+  collectedMatches: StringList.TStringList;
+  e: StringList.Node;
+  msgStr: ARRAY IRC.msgLen OF CHAR;
+  found: BOOLEAN;
+  pos: INTEGER;
+  cmdHelpLength, cmdLastLength, cmdSearchLength: INTEGER;
 BEGIN
-  Strings.Extract(msg, 0, 4, tmp);
-  IF (tmp = "help") THEN
+  cmdHelpLength := Strings.Length(cmdHelp);
+  cmdLastLength := Strings.Length(cmdLast);
+  cmdSearchLength := Strings.Length(cmdSearch);
+  Strings.Extract(msg, 0, cmdHelpLength, tmp);
+  IF (tmp = cmdHelp) THEN
      tlk := "i'm a humble irc bot written in oberon. https://github.com/norayr/irc_bot/";
      IRC.sendMsgToDst(inst, user, tlk);
      Platform.Delay(delay);
-     tlk := "Type 'last n' to get last n messages I remember. I do remember not more, than last ";
+     tlk := "Type 'last n' to get last n messages I remember. Type 'search [n] pattern' to search the last messages for a pattern. I do remember not more, than last ";
      oocIntStr.IntToStr(strListLen, num);
      Strings.Append(num, tlk);
      Strings.Append(" messages.", tlk);
@@ -129,6 +147,73 @@ BEGIN
      ELSE
        IRC.sendMsgToDst(inst, user, "wrong format of 'last' command.");
      END;
+  ELSIF (tmp = "searc") THEN (* 'search' is 6 letters, tmp is first 6 chars *)
+     Strings.Extract(msg, cmdSearchLength, SHORT(LEN(msg)) - cmdSearchLength, restMsg);
+     strUtils.RemoveLeftChars(restMsg, ' ');
+     IF restMsg[0] = 0X THEN
+        IRC.sendMsgToDst(inst, user, "Please provide a search pattern.");
+        RETURN;
+     END;
+     (* Check if first word is a number *)
+     pstr := strUtils.ExtractWord(1, restMsg, ' ');
+     oocIntStr.StrToInt(pstr^, searchCount, res);
+     IF res = 0 THEN
+        (* Valid count, extract pattern *)
+        Strings.FindNext(pstr^, restMsg, 0, found, pos);
+        IF found THEN
+           pos := pos + Strings.Length(pstr^);
+           Strings.Extract(restMsg, pos, LEN(restMsg) - pos, pattern);
+           strUtils.RemoveLeftChars(pattern, ' ');
+        ELSE
+           pattern[0] := 0X;
+        END;
+        IF pattern[0] = 0X THEN
+           IRC.sendMsgToDst(inst, user, "Please provide a search pattern.");
+           RETURN;
+        END;
+     ELSE
+        (* Invalid count, use default *)
+        searchCount := 10;
+        COPY(restMsg, pattern);
+        strUtils.RemoveLeftChars(pattern, ' ');
+        IF pattern[0] = 0X THEN
+           IRC.sendMsgToDst(inst, user, "Please provide a search pattern.");
+           RETURN;
+        END;
+     END;
+     (* Collect matches *)
+     collectedMatches := StringList.Create();
+     FOR i := 0 TO SHORT(stringList.Count) - 1 DO
+        e := stringList.Get(stringList, i);
+        COPY(e.obj(StringList.TString).str^, msgStr);
+        IF strUtils.contains1(msgStr, pattern) THEN
+           collectedMatches.AppendString(collectedMatches, msgStr);
+        END;
+     END;
+     (* Process and send results *)
+     IF collectedMatches.Count > 0 THEN
+        actualCount := searchCount;
+        IF actualCount <= 0 THEN
+           actualCount := 10;
+        END;
+        actualCount := MIN(actualCount, collectedMatches.Count);
+        (* Prepare summary message *)
+        COPY("Found ", msgTxt);
+        oocIntStr.IntToStr(collectedMatches.Count, num);
+        Strings.Append(num, msgTxt);
+        Strings.Append(" matches. Showing last ", msgTxt);
+        oocIntStr.IntToStr(actualCount, actualStr);
+        Strings.Append(actualStr, msgTxt);
+        Strings.Append(":", msgTxt);
+        IRC.sendMsgToDst(inst, user, msgTxt);
+        Platform.Delay(delay);
+        (* Send the matches *)
+        listToUser(inst, collectedMatches, user, actualCount);
+     ELSE
+        IRC.sendMsgToDst(inst, user, "No matches found.");
+     END;
+     (* Free collectedMatches *)
+     collectedMatches.Free(collectedMatches);
   ELSE
      IRC.sendMsgToDst(inst, user, "I am not a sophisticated bot.  Type 'help' for help.");
   END;
@@ -410,6 +495,7 @@ BEGIN
 END entrance;
 
 BEGIN
+  COPY("help", cmdHelp); COPY("last", cmdLast); COPY("search", cmdSearch);
   Platform.SetInterruptHandler(interrupt);
   entrance
 END vocbot.
