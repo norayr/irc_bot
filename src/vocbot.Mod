@@ -5,6 +5,7 @@ IMPORT IRC, opts, Out, Strings := ooc2Strings, ethStrings, StringList, oocIntStr
 CONST
   delay = 2000; (*delay between sending the history messages to the user.*)
   defListLength = 200;
+  msgLen = 512;
 VAR
   stringList: StringList.TStringList; (* buffer to store lines *)
   inst: IRC.instance;
@@ -80,7 +81,8 @@ END MIN;
 
 PROCEDURE processPrivateMessage(VAR inst: IRC.instance; VAR msg, user: ARRAY OF CHAR);
 VAR
-  tmp, tmp2, tmpLow, tmp2Low, num: ARRAY 16 OF CHAR;
+  tmp, tmp2, num: ARRAY 16 OF CHAR;
+  msgLow0, msgLow1: POINTER TO ARRAY msgLen OF CHAR; (* heap to not exhaust stack space *)
   tlk: ARRAY 256 OF CHAR;
   i: INTEGER;
   j: LONGINT;
@@ -94,16 +96,18 @@ VAR
   msgStr: ARRAY IRC.msgLen OF CHAR;
   found: BOOLEAN;
   pos: INTEGER;
-  cmdHelpLength, cmdLastLength, cmdSearchLength: INTEGER;
+  cmdHelpLength, cmdLastLength, cmdSearchLength, msgLength: INTEGER;
 BEGIN
   cmdHelpLength := Strings.Length(cmdHelp);
   cmdLastLength := Strings.Length(cmdLast);
   cmdSearchLength := Strings.Length(cmdSearch);
-  Strings.Extract(msg, 0, cmdHelpLength, tmp);
-  Strings.Extract(msg, 0, cmdSearchLength, tmp2);
-  ethStrings.Lower(tmp, tmpLow);
-  ethStrings.Lower(tmp2, tmp2Low);
-  IF (tmpLow = cmdHelp) THEN
+  NEW(msgLow0); NEW(msgLow1);
+  COPY(msg, msgLow0^); (* copy makes sure that string is null terminated *)
+  ethStrings.Lower(msgLow0^, msgLow1^);
+
+  Strings.Extract(msgLow1^, 0, cmdHelpLength, tmp);
+  Strings.Extract(msgLow1^, 0, cmdSearchLength, tmp2);
+  IF (tmp = cmdHelp) THEN
      tlk := "i'm a humble irc bot written in oberon. https://github.com/norayr/irc_bot/";
      IRC.sendMsgToDst(inst, user, tlk);
      Platform.Delay(delay);
@@ -118,7 +122,7 @@ BEGIN
      Strings.Append(num, tlk);
      Strings.Append(" lines.", tlk);
      IRC.sendMsgToDst(inst, user, tlk);
-  ELSIF (tmpLow = cmdLast) THEN
+  ELSIF (tmp = cmdLast) THEN
      i := strUtils.WordCount(msg, ' ');
      IF i = 2 THEN
        pstr := strUtils.ExtractWord(2, msg, ' ');
@@ -150,7 +154,7 @@ BEGIN
      ELSE
        IRC.sendMsgToDst(inst, user, "wrong format of 'last' command.");
      END;
-  ELSIF (tmp2Low = cmdSearch) THEN (* 'search' is 6 letters, tmp is first 6 chars *)
+  ELSIF (tmp2 = cmdSearch) THEN (* 'search' is 6 letters, tmp is first 6 chars *)
      Strings.Extract(msg, cmdSearchLength, SHORT(LEN(msg)) - cmdSearchLength, restMsg);
      strUtils.RemoveLeftChars(restMsg, ' ');
      IF restMsg[0] = 0X THEN
