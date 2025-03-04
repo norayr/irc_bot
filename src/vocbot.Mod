@@ -1,6 +1,6 @@
 MODULE vocbot; (* noch 13.4.2017 / 18.5.2017*)
 
-IMPORT IRC, opts, Out, Strings := ooc2Strings, StringList, oocIntStr, strUtils, Files, Platform;
+IMPORT IRC, opts, Out, Strings := ooc2Strings, ethStrings, StringList, oocIntStr, strUtils, Files, Platform;
 
 CONST
   delay = 2000; (*delay between sending the history messages to the user.*)
@@ -80,7 +80,7 @@ END MIN;
 
 PROCEDURE processPrivateMessage(VAR inst: IRC.instance; VAR msg, user: ARRAY OF CHAR);
 VAR
-  tmp, tmp2, num: ARRAY 16 OF CHAR;
+  tmp, tmp2, tmpLow, tmp2Low, num: ARRAY 16 OF CHAR;
   tlk: ARRAY 256 OF CHAR;
   i: INTEGER;
   j: LONGINT;
@@ -101,7 +101,9 @@ BEGIN
   cmdSearchLength := Strings.Length(cmdSearch);
   Strings.Extract(msg, 0, cmdHelpLength, tmp);
   Strings.Extract(msg, 0, cmdSearchLength, tmp2);
-  IF (tmp = cmdHelp) THEN
+  ethStrings.Lower(tmp, tmpLow);
+  ethStrings.Lower(tmp2, tmp2Low);
+  IF (tmpLow = cmdHelp) THEN
      tlk := "i'm a humble irc bot written in oberon. https://github.com/norayr/irc_bot/";
      IRC.sendMsgToDst(inst, user, tlk);
      Platform.Delay(delay);
@@ -116,7 +118,7 @@ BEGIN
      Strings.Append(num, tlk);
      Strings.Append(" lines.", tlk);
      IRC.sendMsgToDst(inst, user, tlk);
-  ELSIF (tmp = cmdLast) THEN
+  ELSIF (tmpLow = cmdLast) THEN
      i := strUtils.WordCount(msg, ' ');
      IF i = 2 THEN
        pstr := strUtils.ExtractWord(2, msg, ' ');
@@ -148,7 +150,7 @@ BEGIN
      ELSE
        IRC.sendMsgToDst(inst, user, "wrong format of 'last' command.");
      END;
-  ELSIF (tmp2 = cmdSearch) THEN (* 'search' is 6 letters, tmp is first 6 chars *)
+  ELSIF (tmp2Low = cmdSearch) THEN (* 'search' is 6 letters, tmp is first 6 chars *)
      Strings.Extract(msg, cmdSearchLength, SHORT(LEN(msg)) - cmdSearchLength, restMsg);
      strUtils.RemoveLeftChars(restMsg, ' ');
      IF restMsg[0] = 0X THEN
