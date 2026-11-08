@@ -1,76 +1,84 @@
 # IRC history bot
 
-`vocbot` is an IRC bot written in Oberon. It logs channel activity and keeps
-recent messages available through private commands:
+`vocbot` is an Oberon example application for the `IRC`, `IRCTCP` and `IRCTLS`
+libraries. It logs channel messages and answers private requests for history:
 
 - `help` — show the commands.
-- `last n` — return up to the last `n` remembered messages.
-- `search [n] pattern` — return recent matches, showing ten by default.
+- `last n` — return recent messages.
+- `search [n] pattern` — search remembered messages, showing ten by default.
 
-Replies are spaced two seconds apart while the bot continues receiving IRC
-traffic. Mentioning the bot in a channel prompts a private reply.
+The bot owns history, log files, channel joining and reply pacing. It calls
+`IRC.Poll` in its application loop and sends one queued reply every two
+seconds, continuing to answer PINGs while history is being delivered. Message
+text is preserved; long replies are split at UTF-8 boundaries. The reply queue
+is bounded to twice the history limit plus sixteen frames.
 
 ## Building
 
-Use a current [VOC](https://github.com/vishaps/voc) installation with its
-`Internet`, `Sockets`, `opts`, `StringList`, `strUtils`, `strTypes`, `IntStr`
-and `oocStrings` libraries. The separate [IRC module](https://github.com/norayr/irc)
-provides the protocol implementation.
+Install VOC's Linux model-2 networking profile with `Sockets`, `DNS`, the
+utility/options/list modules, and the updated resumable `TLS13Live` API.
+Then:
 
 ```sh
 git clone https://github.com/norayr/irc_bot
 cd irc_bot
 make get_deps
 make
-```
-
-The build uses `../irc` when that checkout exists, otherwise `deps/irc`.
-To choose another checkout, use `make IRC_DIR=/path/to/irc`. `VOC` and `BUILD`
-can also be overridden. Only the IRC module and bot are compiled locally;
-the remaining modules come from VOC. `make get_deps` fetches a missing IRC
-checkout; it leaves existing checkouts unchanged.
-
-## Running
-
-```sh
-build/vocbot -h irc.libera.chat -p 6667 -o owner -u vocbot \
-  -n vocbot -r '#test' -l 200
-```
-
-`-l` sets the history limit (default 200). `-w password` optionally supplies
-the IRC server password. Channel logs are named after their channels in the
-working directory. On startup, the bot restores recent history from its log.
-Keep running it from the same directory to reuse that history.
-
-The IRC loop retries failed connections every 23 seconds, registers again,
-and rejoins the configured channels after the server's welcome reply. It
-also sends a PING after four idle minutes and reconnects if no matching PONG
-arrives within one minute. Registration has a one-minute deadline.
-
-Press Ctrl-C to close the connection and flush the logs. Pending bot replies
-are bounded to twice the history limit plus sixteen messages; additional
-replies are dropped while that queue is full.
-
-### Selecting the installed VOC runtime
-
-When multiple VOC installations coexist, the dynamic loader must select the
-runtime matching the compiler and installed modules. If it selects an older
-`/opt/voc/lib/libvoc-O2.so` instead of the current `/usr/lib64` installation,
-run with:
-
-```sh
-LD_LIBRARY_PATH=/usr/lib64 build/vocbot -h irc.libera.chat -p 6667 \
-  -o owner -u vocbot -n vocbot -r '#test'
-```
-
-## Testing
-
-```sh
 make tests
 ```
 
-Tests require Python 3 and use a local fake IRC server. They cover fragmented
-and combined messages, PING/PONG, failed initial connections, disconnects,
-timeouts, rejoining, history loading, search and paced replies. They take
-about a minute, including the production reconnect delay. Use the same
-`LD_LIBRARY_PATH` setting as above if needed.
+The build uses `../irc` when present, otherwise `deps/irc`. Set
+`IRC_DIR=/path/to/irc` to choose a checkout. `make get_deps` only fetches a
+missing IRC checkout. `VOC` and `BUILD` are overridable. During development,
+the IRC build can compile the updated `../tls/src/TLS13Live.Mod`; see the
+IRC README for `TLS_SOURCE` and installed-library builds.
+
+## Running
+
+Verified TLS is the default transport:
+
+```sh
+build/vocbot -h irc.libera.chat -p 6697 -o owner -u vocbot \
+  -n vocbot -r '#test' -l 200
+```
+
+To require SASL PLAIN, set the password in an environment variable and add
+the account name:
+
+```sh
+export IRC_SASL_PASSWORD='your-account-password'
+build/vocbot -h irc.libera.chat -p 6697 -o owner -u vocbot \
+  -n vocbot -r '#test' -a account-name
+```
+
+`-s NAME` chooses another password environment variable. `-w password`
+supplies the separate IRC server PASS credential. SASL requires verified
+TLS; authentication failures stop the client. The CA bundle is selected by
+the TLS library's default or `SSL_CERT_FILE`. The underlying TLS library's
+security and platform limitations apply; see its documentation.
+
+For a controlled plaintext server, explicitly use `-x plain` and its port.
+`-l` sets the history limit, default 200. Logs are named after the channel
+in the working directory, and are restored on startup. Continue using the
+same directory to keep history. Ctrl-C stops reconnecting and flushes logs.
+
+Network failures reconnect with capped backoff, re-register and rejoin the
+channel. Nickname conflicts and failed joins are reported. KICKs are reported
+without automatically fighting channel policy by repeatedly rejoining.
+
+## Tests and runtime selection
+
+`make tests` runs the IRC library's standalone suite and local fake-server
+application tests, including history, search, paced replies, UTF-8, restarts
+and reconnects. Python 3 and the OpenSSL command-line tool are test dependencies.
+The production reconnect test takes about 23 seconds.
+
+If the loader selects an older `/opt/voc` runtime instead of the matching
+`/usr/lib64` installation, use `LD_LIBRARY_PATH=/usr/lib64` when building
+tests and running the executable. Rebuild dependent modules when updating
+the TLS state layout.
+
+## License
+
+Copyright (C) 2017–2026 Norayr Chilingarian. Licensed under GNU GPL version 3
+only (`GPL-3.0-only`); see `LICENSE`. The IRC library is LGPL-3.0-only.
