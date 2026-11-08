@@ -1,5 +1,6 @@
 """Application regressions against a local fake IRC server."""
 import contextlib
+import os
 from pathlib import Path
 import signal
 import socket
@@ -124,6 +125,23 @@ def main():
                 peer.send(":bob!u@h PRIVMSG bot :last 1\r\nPING :empty\r\n")
                 peer.expect("PONG :empty"); peer.expect("PRIVMSG bob :I do not remember any messages yet.")
             peer.close()
+            # Explicit plaintext transport must not leak configured SASL credentials.
+            with tempfile.TemporaryFile() as output:
+                process = subprocess.Popen(command + ["-a", "account"], cwd=directory,
+                                           env={**os.environ, "IRC_SASL_PASSWORD": "synthetic-secret"},
+                                           stdout=output, stderr=output)
+                try:
+                    server.settimeout(4)
+                    connection, _ = server.accept()
+                    with connection:
+                        connection.settimeout(4)
+                        assert connection.recv(1024) == b""
+                    assert process.wait(timeout=4) == 3
+                    output.seek(0)
+                    assert b"synthetic-secret" not in output.read()
+                finally:
+                    if process.poll() is None:
+                        process.kill(); process.wait()
     print("PASS: bot history, search, pacing, responsive PINGs, reconnect, UTF-8 and restart")
 
 

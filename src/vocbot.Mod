@@ -26,7 +26,7 @@ VAR
   logRider: Files.Rider;
   historyLength, replyCount, lastReply: LONGINT;
   firstReply, finalReply: Reply;
-  haveReplied: BOOLEAN;
+  haveReplied, failed: BOOLEAN;
 
 PROCEDURE interrupt(i: LONGINT);
 BEGIN
@@ -207,6 +207,7 @@ PROCEDURE onState(inst: IRC.Client; state, error: INTEGER; detail: ARRAY OF CHAR
 VAR line: ARRAY 256 OF CHAR; accepted: BOOLEAN;
 BEGIN
   Out.String("IRC: "); Out.String(detail); Out.Ln;
+  IF (state = IRC.Stopped) & (error # 0) THEN failed := TRUE END;
   IF (state = IRC.Ready) & (error = 0) THEN
     COPY("JOIN ", line); Strings.Append(room, line); accepted := IRC.SendRaw(inst, line)
   END
@@ -309,11 +310,11 @@ BEGIN
   Out.String("Remembering up to "); Out.Int(historyLength, 0); Out.String(" messages in "); Out.String(room); Out.Ln;
   WHILE inst.state # IRC.Stopped DO IRC.Poll(inst); sendReply(inst); Platform.Delay(10) END;
   IF logfile # NIL THEN Files.Register(logfile); Files.Close(logfile) END;
-  IF ~started THEN HALT(3) END
+  IF ~started OR failed THEN HALT(3) END
 END entrance;
 
 BEGIN
-  firstReply := NIL; finalReply := NIL; replyCount := 0; lastReply := 0; haveReplied := FALSE;
+  firstReply := NIL; finalReply := NIL; replyCount := 0; lastReply := 0; haveReplied := FALSE; failed := FALSE;
   Platform.SetInterruptHandler(interrupt);
   entrance
 END vocbot.
