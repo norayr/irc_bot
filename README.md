@@ -1,72 +1,76 @@
-this is an IRC bot written in Oberon.
+# IRC history bot
 
-behavior
-========
-this bot can join the room(s), and log its activity.
+`vocbot` is an IRC bot written in Oberon. It logs channel activity and keeps
+recent messages available through private commands:
 
-its main purpose to remember channel history, and tell it to those who asks.
+- `help` — show the commands.
+- `last n` — return up to the last `n` remembered messages.
+- `search [n] pattern` — return recent matches, showing ten by default.
 
-hopefully you can find `vocbot` at the `#oberon` channel on `irc.freenode.net` and can talk to it to understand how it works.
+Replies are spaced two seconds apart while the bot continues receiving IRC
+traffic. Mentioning the bot in a channel prompts a private reply.
 
-you are supposed talk to it privately.
-if you don't talk to it privately, it'll open a private chat and suggest to chat there itself.
+## Building
 
-the most important command is `help` and bot will tell you how to use it.
+Use a current [VOC](https://github.com/vishaps/voc) installation with its
+`Internet`, `Sockets`, `opts`, `StringList`, `strUtils`, `strTypes`, `IntStr`
+and `oocStrings` libraries. The separate [IRC module](https://github.com/norayr/irc)
+provides the protocol implementation.
 
-in particular, you can ask for `last n` messages, if you want to know what was happening in the room recently.
-
-keep in mind that all the messages are logged to the output log files in the directory you run it from.
-
-the configuration should be done before compilation. sorry for that.
-there is no separate config file now. more on that in the build section of this readme.
-
-get the source
-==============
-
-```
+```sh
 git clone https://github.com/norayr/irc_bot
-```
-get submodules
-```
 cd irc_bot
-git submodule update --init
+make get_deps
+make
 ```
 
-build
-=====
+The build uses `../irc` when that checkout exists, otherwise `deps/irc`.
+To choose another checkout, use `make IRC_DIR=/path/to/irc`. `VOC` and `BUILD`
+can also be overridden. Only the IRC module and bot are compiled locally;
+the remaining modules come from VOC. `make get_deps` fetches a missing IRC
+checkout; it leaves existing checkouts unchanged.
 
-firstly, you need a compiler: [voc](https://github.com/vishaps/voc).
-once you have it, and you have `voc` binary in your path, you can proceed.
+## Running
 
-configuration
-============
-
-no configuration, but you need to run it with commandline arguments.
-
-see `test.sh` for an example.
-
-there is a hardcoded configuration option, which may want to change
-
-`strListLen = 100;`
-
-this suggests how many lines bot will remember to tell later those who ask for the channel history.
-
-once you changed the source `src/vocbot.Mod`, compile the project with `make`.
-
-running
-=======
-
-see test.sh.
-
-
-testing
-=======
-
-it's possible to simulate network outage by
-
-```
-iptables -A OUTPUT -p tcp --dport 6667 -j DROP
-sleep 30
-iptables -D OUTPUT -p tcp --dport 6667 -j DROP
+```sh
+build/vocbot -h irc.libera.chat -p 6667 -o owner -u vocbot \
+  -n vocbot -r '#test' -l 200
 ```
 
+`-l` sets the history limit (default 200). `-w password` optionally supplies
+the IRC server password. Channel logs are named after their channels in the
+working directory. On startup, the bot restores recent history from its log.
+Keep running it from the same directory to reuse that history.
+
+The IRC loop retries failed connections every 23 seconds, registers again,
+and rejoins the configured channels after the server's welcome reply. It
+also sends a PING after four idle minutes and reconnects if no matching PONG
+arrives within one minute. Registration has a one-minute deadline.
+
+Press Ctrl-C to close the connection and flush the logs. Pending bot replies
+are bounded to twice the history limit plus sixteen messages; additional
+replies are dropped while that queue is full.
+
+### Selecting the installed VOC runtime
+
+When multiple VOC installations coexist, the dynamic loader must select the
+runtime matching the compiler and installed modules. If it selects an older
+`/opt/voc/lib/libvoc-O2.so` instead of the current `/usr/lib64` installation,
+run with:
+
+```sh
+LD_LIBRARY_PATH=/usr/lib64 build/vocbot -h irc.libera.chat -p 6667 \
+  -o owner -u vocbot -n vocbot -r '#test'
+```
+
+## Testing
+
+```sh
+make tests
+```
+
+Tests require Python 3 and use a local fake IRC server. They cover fragmented
+and combined messages, PING/PONG, failed initial connections, disconnects,
+timeouts, rejoining, history loading, search and paced replies. They take
+about a minute, including the production reconnect delay. Use the same
+`LD_LIBRARY_PATH` setting as above if needed.

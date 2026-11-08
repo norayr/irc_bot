@@ -1,46 +1,24 @@
-.POSIX:
+VOC ?= voc
+BUILD ?= build
+IRC_DIR ?= $(if $(wildcard ../irc/src/IRC.Mod),../irc,deps/irc)
+IRC_SRC = $(abspath $(IRC_DIR)/src/IRC.Mod)
 
-CFLAGS = 
+.PHONY: all get_deps tests clean
+all: $(BUILD)/vocbot
 
-DEPS      = norayr/lists    \
-	    norayr/Internet \
-	    norayr/time     \
-	    norayr/irc      \
-	    norayr/opts
+# VOC supplies the utility, options, list and networking modules.
+get_deps:
+	@test -f "$(IRC_SRC)" || git clone https://github.com/norayr/irc "$(IRC_DIR)"
 
-GITHUB    = https://github.com/
+$(BUILD)/IRC.o: $(IRC_SRC)
+	mkdir -p "$(BUILD)"
+	cd "$(BUILD)" && $(VOC) -s "$(IRC_SRC)"
 
-ROOTDIR   = $$PWD
+$(BUILD)/vocbot: src/vocbot.Mod $(BUILD)/IRC.o
+	cd "$(BUILD)" && $(VOC) -m "$(abspath src/vocbot.Mod)"
 
-all: ${DEPS}
-	@if [ ! -d build ]; then \
-		mkdir build;     \
-	fi
-	@for i in $?; do                                 \
-		cp -r   ${ROOTDIR}/build                 \
-			${ROOTDIR}/deps/$${i#*/}/build;  \
-		make -C ${ROOTDIR}/deps/$${i#*/};        \
-		cp -r   ${ROOTDIR}/deps/$${i#*/}/build/* \
-			${ROOTDIR}/build/;               \
-	done
-	@cd build; voc ${ROOTDIR}/../src/vocbot.Mod -m
-
-${DEPS}:
-	@for i in $@; do                                          \
-		if [ -d deps/$${i#*/} ]; then                     \
-			printf "Updating %s: " $${i#*/};          \
-			git -C deps/$${i#*/} pull --ff-only       \
-				${GITHUB}$$i > /dev/null 2>&1     \
-				&& echo done                      \
-				|| (echo failed && exit 1);       \
-		else                                              \
-			printf "Fetching %s: " $${i#*/};          \
-			git clone ${GITHUB}$$i deps/$${i#*/}      \
-				> /dev/null 2>&1                  \
-				&& echo done                      \
-				|| (echo failed && exit 1);       \
-		fi                                                \
-	done
+tests: all
+	python3 tests/reconnect.py "$(abspath $(BUILD)/vocbot)" "$(IRC_SRC)" "$(VOC)"
 
 clean:
-	rm -rf build deps
+	rm -f $(addprefix $(BUILD)/,vocbot vocbot.c vocbot.h vocbot.o vocbot.sym IRC.c IRC.h IRC.o IRC.sym)
